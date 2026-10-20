@@ -6,6 +6,7 @@
 
 #include <raylib.h>
 
+#include <algorithm>
 #include <cstdio>
 
 namespace gridiron::render {
@@ -30,18 +31,40 @@ void drawWorldText(const Font& font, const char* text, Vector2 center, float hei
                 spacing, color);
 }
 
-void drawTurf(bool polish) {
+// Covers the 100-yard field with the grass tile: one 64 px tile = 5 x 5 yards, the scale the
+// asset was designed for. The last row is cropped because 53.3 yards isn't a multiple of 5.
+void drawGrassTiles(const Texture2D& tiles) {
+    using namespace field;
+    constexpr float kTileYards = 5.0f;
+    constexpr float kTilePixels = 64.0f;
+    for (float y = 0.0f; y < kWidth; y += kTileYards) {
+        const float rowYards = std::min(kTileYards, kWidth - y);
+        const Rectangle source{0.0f, 0.0f, kTilePixels, kTilePixels * rowYards / kTileYards};
+        for (float x = kOwnGoalLine; x < kOpponentGoalLine; x += kTileYards) {
+            DrawTexturePro(tiles, source, Rectangle{x, y, kTileYards, rowYards}, Vector2{}, 0.0f,
+                           WHITE); // WHITE = draw the texture's own colors, untinted
+        }
+    }
+}
+
+void drawTurf(const RenderContext& context) {
     using namespace field;
     // Sideline area well beyond the field so the camera margin never shows the clear color.
     DrawRectangleRec(Rectangle{-20.0f, -20.0f, kLength + 40.0f, kWidth + 40.0f},
                      theme::sidelineArea());
-    DrawRectangleRec(Rectangle{kOwnGoalLine, 0.0f, 100.0f, kWidth}, theme::kGrassLight);
 
-    if (polish) {
-        // Mowing stripes every 5 yards, like a broadcast stadium.
+    const Texture2D* grass = context.assets.grassTiles();
+    if (context.polish && grass != nullptr) {
+        drawGrassTiles(*grass);
+    } else {
+        DrawRectangleRec(Rectangle{kOwnGoalLine, 0.0f, 100.0f, kWidth}, theme::kGrassLight);
+    }
+
+    if (context.polish) {
+        // Mowing pattern: every other 5-yard band slightly darker, like a broadcast stadium.
         for (int i = 0; i < 20; i += 2) {
             const float x = kOwnGoalLine + static_cast<float>(i) * 5.0f;
-            DrawRectangleRec(Rectangle{x, 0.0f, 5.0f, kWidth}, theme::kGrassDark);
+            DrawRectangleRec(Rectangle{x, 0.0f, 5.0f, kWidth}, theme::shadow(0.07f));
         }
     }
 
@@ -132,7 +155,7 @@ void drawYardNumbers(const Font& font, bool polish) {
 void drawField(const RenderContext& context) {
     // Polish off uses raylib's built-in pixel font: the plain Milestone 1 look.
     const Font& font = context.polish ? context.assets.font() : GetFontDefault();
-    drawTurf(context.polish);
+    drawTurf(context);
     if (context.polish) {
         drawEndZoneNames(font);
     }

@@ -8,13 +8,15 @@
 namespace gridiron::theme {
 
 // --- Palette ---
-inline constexpr Color kHome{29, 66, 160, 255}; // offense: royal blue
-inline constexpr Color kAway{178, 34, 52, 255}; // defense: crimson
-inline constexpr Color kGrassLight{58, 135, 64, 255};
-inline constexpr Color kGrassDark{48, 117, 55, 255};
+// Team and grass colors are sampled from the Kenney Sports Pack art (assets/), so code-drawn
+// shapes, the plain (F2 off) mode and the sprites all agree.
+inline constexpr Color kHome{65, 159, 221, 255};       // offense: sprite jersey blue
+inline constexpr Color kAway{232, 106, 23, 255};       // defense: sprite jersey orange
+inline constexpr Color kGrassLight{49, 217, 120, 255}; // the two stripes of the grass tile
+inline constexpr Color kGrassDark{46, 204, 113, 255};
 inline constexpr Color kLineWhite{242, 242, 236, 255};
-inline constexpr Color kAccent{255, 196, 37, 255}; // gold: ball carrier, routes, highlights
-inline constexpr Color kUiDark{18, 22, 30, 255};   // panels, shadows, the football itself
+inline constexpr Color kAccent{255, 214, 10, 255}; // yellow: ball carrier, routes, first down
+inline constexpr Color kUiDark{18, 22, 30, 255};   // panels, shadows
 
 // --- Team identity (fictional) ---
 inline constexpr const char* kHomeName = "COMETS";

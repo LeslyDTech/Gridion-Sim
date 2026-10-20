@@ -1,5 +1,6 @@
 #include "Renderer.h"
 
+#include "Assets.h"
 #include "Effects.h"
 #include "FollowCamera.h"
 #include "Theme.h"
@@ -34,6 +35,61 @@ void drawFacingIndicator(Vector2 center, float radius, Vec2 facing) {
     // points down, so (tip, right, left) is the counter-clockwise order.
     DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), theme::kLineWhite);
 }
+
+// --- Sprite art (Kenney Sports Pack) ---------------------------------------------------------
+
+// Player sprites are 21 x 31 px and face +x; the 31 px axis is the shoulders. The shoulders are
+// drawn 2.6x the collision radius wide, a little wider than the collision circle (as real
+// shoulders are) without hiding how close players actually are.
+constexpr float kSpriteShoulderToRadius = 2.6f;
+// The ball sprite's long axis is drawn at ~55 degrees (measured from its pixels), so that angle
+// is subtracted to line the ball up with its direction of travel.
+constexpr float kBallSpriteAxisDegrees = 54.7f;
+constexpr float kBallYardsPerPixel = 0.05f; // 14 x 16 px -> 0.7 x 0.8 yards
+
+float degrees(Vec2 direction) { return std::atan2(direction.y, direction.x) * RAD2DEG; }
+
+// Draws `texture` centered on `center`, `yardsPerPixel` scale, rotated clockwise by `angle`.
+void drawSprite(const Texture2D& texture, Vector2 center, float yardsPerPixel, float angle,
+                Color tint) {
+    const float width = static_cast<float>(texture.width) * yardsPerPixel;
+    const float height = static_cast<float>(texture.height) * yardsPerPixel;
+    DrawTexturePro(texture,
+                   Rectangle{0.0f, 0.0f, static_cast<float>(texture.width),
+                             static_cast<float>(texture.height)},
+                   Rectangle{center.x, center.y, width, height},
+                   Vector2{width / 2.0f, height / 2.0f}, angle, tint);
+}
+
+// Skin tone is picked from the jersey number, so a player looks the same every play.
+const Texture2D* spriteFor(const Player& player, const Assets& assets) {
+    return assets.playerSprite(player.team, player.jersey);
+}
+
+void drawCarrierRing(Vector2 center, float radius, double time) {
+    const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
+    DrawRing(center, radius + 0.12f, radius + 0.34f + pulse, 0.0f, 360.0f, 32,
+             Fade(theme::kAccent, 0.9f));
+}
+
+void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
+                      double time) {
+    const float radius = player.attributes.radius;
+    const float yardsPerPixel =
+        kSpriteShoulderToRadius * radius / static_cast<float>(sprite.height);
+
+    // Soft drop shadow, offset down-right as if lit from the top-left.
+    DrawCircleV(Vector2{center.x + 0.12f, center.y + 0.2f}, radius * 1.1f, theme::shadow(0.4f));
+    if (player.state == PlayerState::BallCarrier) {
+        drawCarrierRing(center, radius, time);
+    }
+    // A tackled player is drawn darker. (WHITE = the sprite's own colors, untinted.)
+    const Color tint =
+        player.state == PlayerState::Tackled ? ColorBrightness(WHITE, -0.35f) : WHITE;
+    drawSprite(sprite, center, yardsPerPixel, degrees(facing), tint);
+}
+
+// --- Code-drawn shapes (fallback when the art is missing) -------------------------------------
 
 void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing, double time) {
     const float radius = player.attributes.radius;
@@ -166,7 +222,10 @@ void drawRoutes(const World& world, const RenderContext& context, float opacity)
 void drawPlayers(const World& world, const RenderContext& context, const Effects& effects) {
     for (const Player& player : world.players()) {
         const Vector2 center = toRaylib(interpolated(player, context.alpha));
-        if (context.polish) {
+        const Texture2D* sprite = spriteFor(player, context.assets);
+        if (context.polish && sprite != nullptr) {
+            drawSpritePlayer(player, *sprite, center, effects.facing(player.id), context.time);
+        } else if (context.polish) {
             drawPolishedPlayer(player, center, effects.facing(player.id), context.time);
         } else {
             drawPlainPlayer(player, center);
@@ -180,7 +239,13 @@ void drawBall(const World& world, const RenderContext& context) {
     if (ball.state == BallState::Held) {
         return; // the gold carrier ring shows who has it
     }
+    const Texture2D* sprite = context.polish ? context.assets.ballSprite() : nullptr;
     if (ball.state != BallState::InAir) {
+        if (sprite != nullptr) { // resting on the ground, pointing downfield
+            drawSprite(*sprite, toRaylib(ground), kBallYardsPerPixel, -kBallSpriteAxisDegrees,
+                       WHITE);
+            return;
+        }
         DrawCircleV(toRaylib(ground), 0.3f, theme::kUiDark);
         DrawCircleLinesV(toRaylib(ground), 0.3f, theme::kLineWhite);
         return;
@@ -200,6 +265,13 @@ void drawBall(const World& world, const RenderContext& context) {
     DrawCircleV(toRaylib(ground), 0.32f * (1.0f - 0.45f * rise),
                 theme::shadow(0.45f - 0.25f * rise));
     const float radius = 0.3f * (1.0f + 0.35f * rise);
+    if (sprite != nullptr) {
+        // Nose points along the flight path.
+        const float angle = degrees(ball.target - ball.launch) - kBallSpriteAxisDegrees;
+        drawSprite(*sprite, toRaylib(lifted), kBallYardsPerPixel * (1.0f + 0.35f * rise), angle,
+                   WHITE);
+        return;
+    }
     DrawCircleV(toRaylib(lifted), radius, theme::kUiDark);
     DrawRing(toRaylib(lifted), radius - 0.06f, radius, 0.0f, 360.0f, 20, theme::kLineWhite);
     // Laces, perpendicular to the direction of flight.
@@ -219,10 +291,20 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool sho
     for (const Player& player : world.players()) {
         const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
 
-        // Jersey number, sized to fit inside the circle.
-        const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
+        // Jersey number: inside the circle, or under the sprite (the sprite's head would be
+        // covered otherwise), with a dark shadow so it reads on the bright grass.
+        const bool sprites = context.polish && spriteFor(player, context.assets) != nullptr;
         std::snprintf(buffer, sizeof(buffer), "%d", player.jersey);
-        drawCenteredText(buffer, center, fontSize, theme::kLineWhite);
+        if (sprites) {
+            const Vector2 below{center.x,
+                                center.y + (player.attributes.radius + 0.45f) * pixelsPerYard};
+            drawCenteredText(buffer, Vector2{below.x + 1.0f, below.y + 1.0f}, 12,
+                             theme::shadow(0.8f));
+            drawCenteredText(buffer, below, 12, theme::kLineWhite);
+        } else {
+            const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
+            drawCenteredText(buffer, center, fontSize, theme::kLineWhite);
+        }
 
         // Throw-button badge above each eligible receiver.
         if (player.receiverNumber != Player::kNone && canThrow &&
@@ -236,8 +318,9 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool sho
         }
 
         if (showStates) {
+            const float offset = sprites ? 1.3f : 0.5f; // stay clear of the jersey number
             const Vector2 below{center.x,
-                                center.y + (player.attributes.radius + 0.5f) * pixelsPerYard};
+                                center.y + (player.attributes.radius + offset) * pixelsPerYard};
             drawCenteredText(toString(player.state), below, 12, theme::kLineWhite);
         }
     }

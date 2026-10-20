@@ -79,6 +79,8 @@ All visual polish lives in `src/platform`. F2 turns it off to show the plain Mil
   the ball rises, and an eased "+N YDS" popup.
 - A broadcast scorebug with score, down & distance, ball spot and play clock, in Bebas Neue
   (SIL Open Font License, `assets/fonts/OFL.txt`).
+- Top-down player, ball and grass art from Kenney's Sports Pack, rotated to each player's facing
+  direction and sized to the collision circles (details in `assets/ASSETS.md`).
 
 ## Architecture
 
@@ -124,3 +126,10 @@ The loader rejects a file with a precise message (for example
 `slant.json: players[3].route[1]: expected a point [x, y]`) when it finds a missing field, a
 wrong type, the wrong player count, a duplicate slot, a player lined up offside, or a role on
 the wrong side of the ball.
+
+## Credits
+
+- Player, ball and field tile art: [Sports Pack](https://kenney.nl/assets/sports-pack) by Kenney,
+  CC0 1.0 (`assets/LICENSE-kenney.txt`).
+- Font: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) by Dharma Type, SIL Open Font
+  License 1.1 (`assets/fonts/OFL.txt`).
