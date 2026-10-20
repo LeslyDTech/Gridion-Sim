@@ -2,6 +2,8 @@
 # runs headless.
 add_executable(gridiron_tests
     test_fixed_timestep.cpp
+    test_player_state.cpp
+    test_route.cpp
 )
 
 target_link_libraries(gridiron_tests PRIVATE gridiron_core Catch2::Catch2WithMain)
