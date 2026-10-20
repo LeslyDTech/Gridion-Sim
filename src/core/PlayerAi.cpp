@@ -56,8 +56,11 @@ Vec2 coverBehavior(const Player& self, const Context& context) {
     return steering::arrive(self.position, shadowPoint, self.attributes.maxSpeed, kArriveRadius);
 }
 
-// Nearest defender within kBlockRange, or nullptr.
+// The defender World assigned to this blocker, or else the nearest one within kBlockRange.
 const Player* findBlockTarget(const Player& self, const Context& context) {
+    if (self.blockTargetId != Player::kNone) {
+        return &context.players[static_cast<std::size_t>(self.blockTargetId)];
+    }
     const Player* best = nullptr;
     float bestDistanceSq = kBlockRange * kBlockRange;
     for (const Player& other : context.players) {

@@ -133,6 +133,14 @@ TEST_CASE("SpatialHash clear empties every cell", "[spatial]") {
     CHECK(pairs.empty());
 }
 
+TEST_CASE("Heavier players take less of the push-apart", "[collision]") {
+    const SeparationShares lineman = separationShares(1.5f, 0.85f); // lineman vs receiver
+    CHECK(lineman.a + lineman.b == Catch::Approx(1.0f));
+    CHECK(lineman.a < lineman.b); // the lineman moves less
+    const SeparationShares equal = separationShares(1.0f, 1.0f);
+    CHECK(equal.a == Catch::Approx(0.5f));
+}
+
 TEST_CASE("findContact reports overlap depth and direction", "[collision]") {
     const auto contact = findContact({{0.0f, 0.0f}, 1.0f}, {{1.5f, 0.0f}, 1.0f});
     REQUIRE(contact.has_value());

@@ -91,6 +91,31 @@ TEST_CASE("Running out of bounds ends the play at the sideline", "[world]") {
     }
 }
 
+TEST_CASE("Blocks hold longer for strong blockers and shorter for good pass rushers", "[world]") {
+    const float lineVsLine = blockHoldSeconds(attributesFor(Role::OL), attributesFor(Role::DL));
+    CHECK(lineVsLine > 1.5f);
+    CHECK(lineVsLine < 2.0f);
+    // A receiver blocking a linebacker can't hold him as long as a lineman holds a lineman.
+    CHECK(blockHoldSeconds(attributesFor(Role::WR), attributesFor(Role::LB)) < lineVsLine);
+}
+
+TEST_CASE("Pass protection gives the quarterback time in the pocket", "[world]") {
+    // Shotgun slant, quarterback standing still: before blocking engagement he was sacked in
+    // about 1.2 seconds. Five linemen against a four-man rush should hold for 2.5+ seconds.
+    World world;
+    world.setup(loadData("plays/01_slant.json"), loadData("defense/base_cover1.json"),
+                {field::kStartingLineOfScrimmageX, field::kCenterY});
+    InputCommands snap;
+    snap.snap = true;
+    world.step(snap, kDt);
+    int steps = 0;
+    while (world.phase() == PlayPhase::Live && steps < 60 * 10) {
+        world.step(InputCommands{}, kDt);
+        ++steps;
+    }
+    CHECK(static_cast<float>(steps) * kDt >= 2.5f);
+}
+
 TEST_CASE("nextBallSpot moves the ball to the tackle, between the hashes", "[game]") {
     const Vec2 start{35.0f, field::kCenterY};
 

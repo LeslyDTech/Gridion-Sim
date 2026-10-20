@@ -6,6 +6,7 @@
 #include "Steering.h"
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 
@@ -64,12 +65,57 @@ Vec2 leadTarget(Vec2 passer, const Player& receiver) {
     return aim;
 }
 
+// Blocking engagement tuning.
+constexpr float kBaseBlockHoldSeconds = 1.4f; // a 1.0 blocker on a 1.0 shedder
+constexpr float kEngagedSpeedFactor = 0.2f;   // an engaged defender moves at 20% of his intent
+constexpr float kShedFreeSeconds = 0.8f;      // after shedding: can't be re-engaged for this long
+constexpr float kShedMassMultiplier = 3.0f;   // ...and bulls through blockers in contact
+constexpr float kBlockAssignRange = 7.0f;     // blockers only pick up defenders this close
+constexpr float kBlockReach = 0.15f;          // "hands": engaged within this of touching
+constexpr float kThreatDepth = 2.5f;          // defenders this close to the line are rushers
+constexpr float kThreatNearby = 3.0f;         // ...and so is anyone right on top of a blocker
+
+// A defender a blocker should pick up: coming after the ball (Pursuing), not just past a block,
+// and either at the line of scrimmage or right on the blocker. A linebacker sitting in his zone
+// 5 yards deep isn't a threat yet; chasing him would open a hole at the line.
+bool isBlockThreat(const Player& blocker, const Player& defender, float lineOfScrimmageX) {
+    if (defender.team != Team::Defense || defender.state != PlayerState::Pursuing ||
+        defender.shedSeconds > 0.0f) {
+        return false;
+    }
+    const float d = distanceSquared(blocker.position, defender.position);
+    if (d > kBlockAssignRange * kBlockAssignRange) {
+        return false;
+    }
+    return defender.position.x - lineOfScrimmageX <= kThreatDepth ||
+           d <= kThreatNearby * kThreatNearby;
+}
+
+bool isEngageableBlock(const Player& blocker, const Player& defender) {
+    return blocker.team == Team::Offense && blocker.state == PlayerState::Blocking &&
+           defender.team == Team::Defense && defender.shedSeconds <= 0.0f;
+}
+
+// Mass used when two players are pushed apart: a defender who has just shed a block throws the
+// blocker aside instead of being held up again.
+float contactMass(const Player& self, const Player& other) {
+    const bool bullsThrough =
+        self.team == Team::Defense && self.shedSeconds > 0.0f && other.team == Team::Offense;
+    return self.attributes.mass * (bullsThrough ? kShedMassMultiplier : 1.0f);
+}
+
 } // namespace
+
+float blockHoldSeconds(const PlayerAttributes& blocker, const PlayerAttributes& defender) {
+    return kBaseBlockHoldSeconds * blocker.blocking / std::max(defender.shedding, 0.05f);
+}
 
 World::World() : m_spatialHash(kGridMin, kGridMax, kGridCellSize) {
     // Reserve every per-step buffer up front, so step() never allocates.
     m_players.reserve(kMaxPlayers);
     m_desiredVelocities.resize(kMaxPlayers);
+    m_blockThisStep.resize(kMaxPlayers);
+    m_blockPairs.reserve(kMaxPlayers * kMaxPlayers);
     m_candidatePairs.reserve(kMaxPairs);
 }
 
@@ -131,7 +177,7 @@ void World::step(const InputCommands& input, float dt) {
             tryThrow(input.throwTarget);
         }
         movePlayers(input, dt);
-        resolveCollisions();
+        resolveCollisions(dt);
         if (m_phase == PlayPhase::Live) { // a tackle during collisions ends the play
             updateBall(dt);
             checkBallCarrierPosition();
@@ -139,12 +185,14 @@ void World::step(const InputCommands& input, float dt) {
         break;
     case PlayPhase::Over:
         movePlayers(InputCommands{}, dt); // everyone coasts to a stop
-        resolveCollisions();
+        resolveCollisions(dt);
         break;
     }
 }
 
-void World::resolveCollisions() {
+void World::resolveCollisions(float dt) {
+    std::fill(m_blockThisStep.begin(), m_blockThisStep.end(), 0.0f);
+
     // Broad phase: rebuild the grid from scratch. 22 inserts is cheaper than tracking movement.
     m_spatialHash.clear();
     for (const Player& player : m_players) {
@@ -157,6 +205,13 @@ void World::resolveCollisions() {
     for (const auto& [idA, idB] : m_candidatePairs) {
         Player& a = playerById(idA);
         Player& b = playerById(idB);
+        // Blocks engage within a short reach, not only on overlap: after being pushed apart, two
+        // players often sit exactly touching, and the block shouldn't flicker off for that step.
+        const float reach = a.attributes.radius + b.attributes.radius + kBlockReach;
+        if (distanceSquared(a.position, b.position) <= reach * reach) {
+            recordBlockContact(a, b);
+            recordBlockContact(b, a);
+        }
         const std::optional<Contact> contact =
             findContact({a.position, a.attributes.radius}, {b.position, b.attributes.radius});
         if (!contact) {
@@ -167,6 +222,39 @@ void World::resolveCollisions() {
             Player& carrier = a.state == PlayerState::BallCarrier ? a : b;
             carrier.handle(PlayerEvent::Tackled);
             endPlay(PlayResult::Tackled, carrier.position);
+        }
+    }
+    updateBlockEngagement(dt);
+}
+
+void World::recordBlockContact(const Player& blocker, const Player& defender) {
+    if (isEngageableBlock(blocker, defender)) {
+        float& strongest = m_blockThisStep[static_cast<std::size_t>(defender.id)];
+        strongest = std::max(strongest, blocker.attributes.blocking);
+    }
+}
+
+void World::updateBlockEngagement(float dt) {
+    for (Player& player : m_players) {
+        if (player.team != Team::Defense) {
+            continue;
+        }
+        player.shedSeconds = std::max(0.0f, player.shedSeconds - dt);
+        const float blocking = m_blockThisStep[static_cast<std::size_t>(player.id)];
+        if (blocking <= 0.0f) {
+            player.engaged = false;
+            player.engagedSeconds = 0.0f;
+            continue;
+        }
+        player.engaged = true;
+        player.engagedSeconds += dt;
+        PlayerAttributes blocker;
+        blocker.blocking = blocking;
+        if (player.engagedSeconds >= blockHoldSeconds(blocker, player.attributes)) {
+            // Shed the block: free to move, and briefly can't be picked up again.
+            player.engaged = false;
+            player.engagedSeconds = 0.0f;
+            player.shedSeconds = kShedFreeSeconds;
         }
     }
 }
@@ -192,12 +280,12 @@ bool World::isTackle(const Player& carrier, const Player& defender) {
 }
 
 void World::separate(Player& a, Player& b, const Contact& contact) {
-    // Push both players apart by half the overlap each, so neither has priority. A single pass
-    // can leave small overlaps in a pile-up; they are resolved over the next few steps, which
-    // reads as players jostling.
-    const Vec2 push = contact.normal * (contact.penetration * 0.5f);
-    a.position -= push;
-    b.position += push;
+    // Push the players apart, the lighter one taking more of the overlap (see separationShares).
+    // A single pass can leave small overlaps in a pile-up; they are resolved over the next few
+    // steps, which reads as players jostling.
+    const SeparationShares shares = separationShares(contactMass(a, b), contactMass(b, a));
+    a.position -= contact.normal * (contact.penetration * shares.a);
+    b.position += contact.normal * (contact.penetration * shares.b);
 }
 
 void World::snap() {
@@ -234,7 +322,67 @@ void World::tryThrow(int receiverNumber) {
     }
 }
 
+// Who blocks whom, recomputed every step (a "zone" scheme): every blocker/rusher pair within range
+// is sorted by distance and taken greedily, so each rusher gets his own blocker before anyone is
+// doubled. Blockers left over then help on their nearest rusher (a double team). Without this,
+// two linemen could pick the same defender and leave another one unblocked.
+void World::assignBlocks() {
+    // Assignments are sticky: a blocker keeps his man while that man is still a threat. Swapping
+    // targets every step made blockers lose contact (and their block) as players moved.
+    std::array<bool, kMaxPlayers> claimed{};
+    for (Player& blocker : m_players) {
+        if (blocker.team != Team::Offense || blocker.state != PlayerState::Blocking) {
+            blocker.blockTargetId = Player::kNone;
+            continue;
+        }
+        if (blocker.blockTargetId != Player::kNone &&
+            isBlockThreat(blocker, playerById(blocker.blockTargetId), m_lineOfScrimmageX)) {
+            claimed[static_cast<std::size_t>(blocker.blockTargetId)] = true;
+        } else {
+            blocker.blockTargetId = Player::kNone;
+        }
+    }
+
+    // Free blockers: candidate pairs with free threats, closest first.
+    m_blockPairs.clear();
+    for (const Player& blocker : m_players) {
+        if (blocker.team != Team::Offense || blocker.state != PlayerState::Blocking ||
+            blocker.blockTargetId != Player::kNone) {
+            continue;
+        }
+        for (const Player& defender : m_players) {
+            if (isBlockThreat(blocker, defender, m_lineOfScrimmageX)) {
+                m_blockPairs.push_back({distanceSquared(blocker.position, defender.position),
+                                        blocker.id, defender.id});
+            }
+        }
+    }
+    std::sort(m_blockPairs.begin(), m_blockPairs.end(), [](const BlockPair& a, const BlockPair& b) {
+        if (a.distanceSquared != b.distanceSquared) {
+            return a.distanceSquared < b.distanceSquared;
+        }
+        return a.blocker < b.blocker; // deterministic tie-break
+    });
+
+    for (const BlockPair& pair : m_blockPairs) {
+        Player& blocker = playerById(pair.blocker);
+        const auto defender = static_cast<std::size_t>(pair.defender);
+        if (blocker.blockTargetId == Player::kNone && !claimed[defender]) {
+            blocker.blockTargetId = pair.defender;
+            claimed[defender] = true;
+        }
+    }
+    for (const BlockPair& pair : m_blockPairs) { // sorted, so this is each blocker's nearest
+        Player& blocker = playerById(pair.blocker);
+        if (blocker.blockTargetId == Player::kNone) {
+            blocker.blockTargetId = pair.defender;
+        }
+    }
+}
+
 void World::movePlayers(const InputCommands& input, float dt) {
+    assignBlocks();
+
     // Phase 1: every AI decides based on the same snapshot of the world. Deciding and moving in
     // one loop would let player 5 react to where player 4 is *after* moving this step, making
     // results depend on vector order.
@@ -247,6 +395,9 @@ void World::movePlayers(const InputCommands& input, float dt) {
             m_desiredVelocities[i] = input.move * player.attributes.maxSpeed;
         } else {
             m_desiredVelocities[i] = ai::desiredVelocity(player, context);
+        }
+        if (player.engaged) {
+            m_desiredVelocities[i] *= kEngagedSpeedFactor; // held up by a block
         }
     }
 

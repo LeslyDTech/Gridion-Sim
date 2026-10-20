@@ -14,6 +14,10 @@ namespace gridiron {
 
 enum class PlayPhase : std::uint8_t { PreSnap, Live, Over };
 
+// Blocking: how long a block holds a defender before he sheds it. Stronger blockers hold longer,
+// better pass rushers get off sooner: an offensive lineman holds a defensive lineman ~1.75 s.
+float blockHoldSeconds(const PlayerAttributes& blocker, const PlayerAttributes& defender);
+
 enum class PlayResult : std::uint8_t {
     None,
     Tackled,
@@ -57,11 +61,14 @@ public:
 private:
     void snap();
     void tryThrow(int receiverNumber);
+    void assignBlocks();
     void movePlayers(const InputCommands& input, float dt);
     void runRoute(Player& player, float dt);
     void updateBall(float dt);
-    void resolveCollisions();
+    void resolveCollisions(float dt);
     void separate(Player& a, Player& b, const Contact& contact);
+    void recordBlockContact(const Player& a, const Player& b);
+    void updateBlockEngagement(float dt);
     void checkBallCarrierPosition(); // touchdown / out of bounds
     static bool isTackle(const Player& carrier, const Player& defender);
     void resolvePassArrival();
@@ -73,6 +80,13 @@ private:
 
     std::vector<Player> m_players;
     std::vector<Vec2> m_desiredVelocities; // reused every step, one per player
+    struct BlockPair {
+        float distanceSquared;
+        int blocker;
+        int defender;
+    };
+    std::vector<BlockPair> m_blockPairs; // reused every step by assignBlocks
+    std::vector<float> m_blockThisStep;  // per defender: strongest blocker in contact (0 = none)
     SpatialHash m_spatialHash;
     std::vector<SpatialHash::Pair> m_candidatePairs; // reused every step
     int m_collisionChecks = 0;

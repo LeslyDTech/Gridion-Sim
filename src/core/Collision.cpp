@@ -4,6 +4,14 @@
 
 namespace gridiron {
 
+SeparationShares separationShares(float massA, float massB) {
+    const float total = massA + massB;
+    if (total <= 0.0f) {
+        return {0.5f, 0.5f};
+    }
+    return {massB / total, massA / total}; // the lighter body moves more
+}
+
 std::optional<Contact> findContact(const Circle& a, const Circle& b) {
     const Vec2 offset = b.center - a.center;
     const float radii = a.radius + b.radius;
