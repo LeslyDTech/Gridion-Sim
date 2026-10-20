@@ -56,8 +56,8 @@ void drawEndZoneNames(const Font& font) {
     // Each name reads from its own goal line outward, like a painted end zone.
     drawWorldText(font, theme::kHomeName, Vector2{kEndZoneDepth / 2.0f, kCenterY}, height, -90.0f,
                   paint);
-    drawWorldText(font, theme::kAwayName, Vector2{kLength - kEndZoneDepth / 2.0f, kCenterY},
-                  height, 90.0f, paint);
+    drawWorldText(font, theme::kAwayName, Vector2{kLength - kEndZoneDepth / 2.0f, kCenterY}, height,
+                  90.0f, paint);
 }
 
 void drawLines() {
@@ -81,8 +81,7 @@ void drawLines() {
         drawVerticalLine(x, kWidth - 0.33f - kHashLength, kWidth - 0.33f, kLineWidth);
     }
 
-    DrawRectangleLinesEx(Rectangle{0.0f, 0.0f, kLength, kWidth}, kBoundaryWidth,
-                         theme::kLineWhite);
+    DrawRectangleLinesEx(Rectangle{0.0f, 0.0f, kLength, kWidth}, kBoundaryWidth, theme::kLineWhite);
 }
 
 // The small painted triangle next to each number points toward the nearer goal line.

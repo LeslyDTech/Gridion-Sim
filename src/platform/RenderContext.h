@@ -10,9 +10,9 @@ class FollowCamera;
 struct RenderContext {
     const FollowCamera& camera;
     const Assets& assets;
-    float alpha;   // fixed-timestep interpolation factor: draw lerp(previous, current, alpha)
-    bool polish;   // F2: false draws the plain Milestone 1 look, for before/after comparison
-    double time;   // seconds since start, for pulsing/animated details
+    float alpha; // fixed-timestep interpolation factor: draw lerp(previous, current, alpha)
+    bool polish; // F2: false draws the plain Milestone 1 look, for before/after comparison
+    double time; // seconds since start, for pulsing/animated details
 };
 
 } // namespace gridiron

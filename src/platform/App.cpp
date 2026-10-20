@@ -140,7 +140,7 @@ void App::render(float alpha, float frameSeconds) {
     render::drawField(context);
     render::drawLineOfScrimmage(world, context);
     m_overlay.drawGrid(world.spatialHash());
-    render::drawRoutes(world, context);
+    render::drawRoutes(world, context, m_effects.routeOpacity());
     render::drawPlayers(world, context, m_effects);
     render::drawBall(world, context);
     EndMode2D();

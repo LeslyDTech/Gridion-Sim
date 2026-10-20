@@ -8,6 +8,7 @@
 
 #include <raylib.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -68,6 +69,53 @@ void drawPlainPlayer(const Player& player, Vector2 center) {
     }
 }
 
+// Playbook-style route: straight legs with every cut rounded off by a short quadratic Bezier,
+// finished with an arrowhead. (A Catmull-Rom spline through the waypoints looks smoother but
+// overshoots at sharp cuts, which misrepresents the route.)
+void drawCurvedRoute(const Player& player, Color color) {
+    constexpr float kThickness = 0.2f;
+    constexpr float kMaxCornerRadius = 1.5f; // yards
+
+    Vec2 legStart = player.homePosition;
+    Vec2 corner = player.homePosition;
+    for (std::size_t i = 0; i < player.route.size(); ++i) {
+        const Vec2 previous = i == 0 ? player.homePosition : player.route[i - 1];
+        corner = player.route[i];
+        if (i + 1 == player.route.size()) {
+            break; // last leg is drawn after the loop
+        }
+        const Vec2 next = player.route[i + 1];
+        // Round the cut, but never use more than 40% of either adjoining leg.
+        const float radius = std::min({kMaxCornerRadius, 0.4f * distance(previous, corner),
+                                       0.4f * distance(corner, next)});
+        const Vec2 entry = corner - normalized(corner - previous) * radius;
+        const Vec2 exit = corner + normalized(next - corner) * radius;
+        DrawLineEx(toRaylib(legStart), toRaylib(entry), kThickness, color);
+        DrawSplineSegmentBezierQuadratic(toRaylib(entry), toRaylib(corner), toRaylib(exit),
+                                         kThickness, color);
+        legStart = exit;
+    }
+    const Vec2 end = player.route.back();
+    DrawLineEx(toRaylib(legStart), toRaylib(end), kThickness, color);
+
+    // Arrowhead pointing along the final leg.
+    const Vec2 dir = normalized(end - legStart);
+    const Vec2 side{-dir.y, dir.x};
+    const Vec2 tip = end + dir * 0.7f;
+    const Vec2 left = end - dir * 0.1f + side * 0.5f;
+    const Vec2 right = end - dir * 0.1f - side * 0.5f;
+    DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), color);
+}
+
+void drawStraightRoute(const Player& player, Color color) {
+    Vec2 from = player.homePosition;
+    for (const Vec2 waypoint : player.route) {
+        DrawLineEx(toRaylib(from), toRaylib(waypoint), 0.18f, color);
+        from = waypoint;
+    }
+    DrawCircleV(toRaylib(player.route.back()), 0.3f, color);
+}
+
 // Text centered on a screen point.
 void drawCenteredText(const char* text, Vector2 center, int fontSize, Color color) {
     const int width = MeasureText(text, fontSize);
@@ -85,19 +133,23 @@ void drawLineOfScrimmage(const World& world, const RenderContext& /*context*/) {
                Fade(ColorBrightness(theme::kHome, 0.5f), 0.9f));
 }
 
-void drawRoutes(const World& world, const RenderContext& /*context*/) {
-    if (world.phase() != PlayPhase::PreSnap) {
+void drawRoutes(const World& world, const RenderContext& context, float opacity) {
+    // Plain mode: routes simply disappear at the snap.
+    if (!context.polish && world.phase() != PlayPhase::PreSnap) {
         return;
     }
-    const Color color = Fade(theme::kAccent, 0.6f);
+    if (opacity <= 0.0f) {
+        return;
+    }
+    const Color color = Fade(theme::kAccent, 0.7f * opacity);
     for (const Player& player : world.players()) {
-        Vec2 from = player.position;
-        for (const Vec2 waypoint : player.route) {
-            DrawLineEx(toRaylib(from), toRaylib(waypoint), 0.18f, color);
-            from = waypoint;
+        if (player.route.empty()) {
+            continue;
         }
-        if (!player.route.empty()) {
-            DrawCircleV(toRaylib(player.route.back()), 0.3f, color);
+        if (context.polish) {
+            drawCurvedRoute(player, color);
+        } else {
+            drawStraightRoute(player, color);
         }
     }
 }

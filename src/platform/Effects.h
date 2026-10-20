@@ -22,10 +22,14 @@ public:
     // Unit vector the player is facing (smoothed, so it doesn't flicker when they stop).
     Vec2 facing(int playerId) const;
 
+    // Playbook overlay opacity: 1 before the snap, fading to 0 over half a second after it.
+    float routeOpacity() const;
+
 private:
     void updateFacing(const World& world, float frameSeconds);
 
     std::array<Vec2, kMaxPlayers> m_facing{};
+    float m_secondsSinceSnap = 0.0f;
 };
 
 } // namespace gridiron
