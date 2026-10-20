@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Ball.h"
+#include "Collision.h"
 #include "InputCommands.h"
 #include "PlayDefinition.h"
 #include "Player.h"
+#include "SpatialHash.h"
 
 #include <cstdint>
 #include <vector>
@@ -48,12 +50,18 @@ public:
     const Ball& ball() const { return m_ball; }
     float lineOfScrimmageX() const { return m_lineOfScrimmageX; }
 
+    // Debug view: the broad-phase grid and how many narrow-phase circle tests the last step ran.
+    const SpatialHash& spatialHash() const { return m_spatialHash; }
+    int collisionChecks() const { return m_collisionChecks; }
+
 private:
     void snap();
     void tryThrow(int receiverNumber);
     void movePlayers(const InputCommands& input, float dt);
     void runRoute(Player& player, float dt);
     void updateBall(float dt);
+    void resolveCollisions();
+    void separate(Player& a, Player& b, const Contact& contact);
     void resolvePassArrival();
     void endPlay(PlayResult result, Vec2 spot);
     void broadcast(PlayerEvent event, int exceptId);
@@ -62,7 +70,10 @@ private:
     const Player& playerById(int id) const { return m_players[static_cast<std::size_t>(id)]; }
 
     std::vector<Player> m_players;
-    std::vector<Vec2> m_desiredVelocities; // reused every step, one per player
+    std::vector<Vec2> m_desiredVelocities;          // reused every step, one per player
+    SpatialHash m_spatialHash;
+    std::vector<SpatialHash::Pair> m_candidatePairs; // reused every step
+    int m_collisionChecks = 0;
     Ball m_ball;
     PlayPhase m_phase = PlayPhase::PreSnap;
     PlayOutcome m_outcome;

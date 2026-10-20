@@ -16,6 +16,14 @@ constexpr std::size_t kMaxPlayers = 2 * PlayDefinition::kPlayersPerSide;
 constexpr float kPassSpeed = 22.0f;  // yards/second along the ground (~45 mph)
 constexpr float kCatchRadius = 1.3f; // how close a player must be to the ball to catch it
 
+// Broad-phase grid: covers the field plus a margin for players who run out of bounds. Cells must
+// be at least one player diameter (largest radius is 0.65 yd); 2.5 yd keeps the debug grid legible.
+constexpr Vec2 kGridMin{-10.0f, -10.0f};
+constexpr Vec2 kGridMax{field::kLength + 10.0f, field::kWidth + 10.0f};
+constexpr float kGridCellSize = 2.5f;
+// Worst case is every player near every other: 22 * 21 / 2 pairs.
+constexpr std::size_t kMaxPairs = kMaxPlayers * (kMaxPlayers - 1) / 2;
+
 Player makePlayer(const SlotDefinition& slot, Team team, int id, Vec2 ballSpot) {
     Player player;
     player.id = id;
@@ -58,9 +66,11 @@ Vec2 leadTarget(Vec2 passer, const Player& receiver) {
 
 } // namespace
 
-World::World() {
+World::World() : m_spatialHash(kGridMin, kGridMax, kGridCellSize) {
+    // Reserve every per-step buffer up front, so step() never allocates.
     m_players.reserve(kMaxPlayers);
     m_desiredVelocities.resize(kMaxPlayers);
+    m_candidatePairs.reserve(kMaxPairs);
 }
 
 void World::setup(const PlayDefinition& offense, const PlayDefinition& defense, Vec2 ballSpot) {
@@ -119,12 +129,44 @@ void World::step(const InputCommands& input, float dt) {
             tryThrow(input.throwTarget);
         }
         movePlayers(input, dt);
+        resolveCollisions();
         updateBall(dt);
         break;
     case PlayPhase::Over:
         movePlayers(InputCommands{}, dt); // everyone coasts to a stop
+        resolveCollisions();
         break;
     }
+}
+
+void World::resolveCollisions() {
+    // Broad phase: rebuild the grid from scratch. 22 inserts is cheaper than tracking movement.
+    m_spatialHash.clear();
+    for (const Player& player : m_players) {
+        m_spatialHash.insert(player.id, player.position);
+    }
+    m_spatialHash.findCandidatePairs(m_candidatePairs);
+    m_collisionChecks = static_cast<int>(m_candidatePairs.size());
+
+    // Narrow phase: exact circle test on each candidate pair.
+    for (const auto& [idA, idB] : m_candidatePairs) {
+        Player& a = playerById(idA);
+        Player& b = playerById(idB);
+        const std::optional<Contact> contact =
+            findContact({a.position, a.attributes.radius}, {b.position, b.attributes.radius});
+        if (contact) {
+            separate(a, b, *contact);
+        }
+    }
+}
+
+void World::separate(Player& a, Player& b, const Contact& contact) {
+    // Push both players apart by half the overlap each, so neither has priority. A single pass
+    // can leave small overlaps in a pile-up; they are resolved over the next few steps, which
+    // reads as players jostling.
+    const Vec2 push = contact.normal * (contact.penetration * 0.5f);
+    a.position -= push;
+    b.position += push;
 }
 
 void World::snap() {

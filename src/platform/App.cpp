@@ -17,7 +17,7 @@ constexpr int kWindowHeight = 720;
 constexpr double kSimulationHz = 60.0;
 constexpr float kPixelsPerYard = 16.0f; // 720 px tall window shows 45 of the 53 yards of width
 
-// F2 cycles through these render caps to show that simulation speed does not depend on them.
+// F3 cycles through these render caps to show that simulation speed does not depend on them.
 constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
 
 // Exponential moving average: smooths the update-time readout so it is readable.
@@ -126,6 +126,7 @@ void App::render(float alpha, float frameSeconds) {
     BeginMode2D(m_camera.raylibCamera());
     render::drawFieldSurface();
     render::drawLineOfScrimmage(world);
+    m_overlay.drawGrid(world.spatialHash());
     render::drawRoutes(world);
     render::drawPlayers(world, alpha);
     render::drawBall(world, alpha);
@@ -135,8 +136,11 @@ void App::render(float alpha, float frameSeconds) {
     render::drawPlayerLabels(world, alpha, m_camera, m_overlay.enabled());
     render::drawHud(*m_game);
 
+    const int players = static_cast<int>(world.players().size());
     m_stats.fps = GetFPS();
     m_stats.fpsCap = kFpsCaps[m_fpsCapIndex];
+    m_stats.collisionChecks = world.collisionChecks();
+    m_stats.bruteForcePairs = players * (players - 1) / 2;
     m_overlay.drawStats(m_stats);
     EndDrawing();
 }

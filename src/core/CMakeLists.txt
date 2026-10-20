@@ -2,12 +2,14 @@
 # unit tested headless and reused with any renderer.
 add_library(gridiron_core STATIC
     Ball.cpp
+    Collision.cpp
     FixedTimestep.cpp
     Game.cpp
     PlayerAi.cpp
     PlayerState.cpp
     PlayLoader.cpp
     Route.cpp
+    SpatialHash.cpp
     Steering.cpp
     World.cpp
 )

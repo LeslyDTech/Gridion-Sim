@@ -69,7 +69,7 @@ void InputDevice::poll() {
     }
 
     m_app.toggleDebug = IsKeyPressed(KEY_F1) || gamepadPressed(GAMEPAD_BUTTON_MIDDLE_LEFT);
-    m_app.cycleFpsCap = IsKeyPressed(KEY_F2);
+    m_app.cycleFpsCap = IsKeyPressed(KEY_F3);
 }
 
 InputCommands InputDevice::consumeForStep() {

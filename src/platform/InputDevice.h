@@ -4,7 +4,7 @@
 
 namespace gridiron {
 
-// App-level commands that never reach the simulation (debug views, frame-rate cap).
+// App-level commands that never reach the simulation (debug view on F1, frame-rate cap on F3).
 struct AppCommands {
     bool toggleDebug = false;
     bool cycleFpsCap = false;
