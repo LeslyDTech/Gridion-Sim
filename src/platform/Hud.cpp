@@ -15,9 +15,7 @@
 namespace gridiron::render {
 namespace {
 
-constexpr int kHelpBarHeight = 32;
-constexpr float kScorebugHeight = 48.0f;
-constexpr int kScorebugMargin = 14;
+constexpr int kHelpBarHeight = 32; // plain mode (F2 off)
 
 // ---------------------------------------------------------------- formatting (no allocations)
 
@@ -155,85 +153,10 @@ void drawResultBanner(const PlayOutcome& outcome) {
                      40, theme::kLineWhite);
 }
 
-// ---------------------------------------------------------------- broadcast scorebug (polish on)
-
-// Text in the TTF font, aligned inside a box: align 0 = left, 0.5 = center, 1 = right.
-void drawBoxText(const Font& font, const char* text, Rectangle box, float size, float align,
-                 Color color) {
-    const float spacing = 1.0f;
-    const Vector2 measured = MeasureTextEx(font, text, size, spacing);
-    const float padding = 12.0f;
-    const float x = box.x + padding + (box.width - 2.0f * padding - measured.x) * align;
-    const float y = box.y + (box.height - measured.y) / 2.0f;
-    DrawTextEx(font, text, Vector2{x, y}, size, spacing, color);
-}
-
-void drawTeamSegment(const Font& font, Rectangle box, Color teamColor, const char* name,
-                     int score) {
-    DrawRectangleRec(box, teamColor);
-    // Subtle top-to-bottom shading so the block doesn't look flat.
-    DrawRectangleGradientV(static_cast<int>(box.x), static_cast<int>(box.y),
-                           static_cast<int>(box.width), static_cast<int>(box.height),
-                           Fade(theme::kLineWhite, 0.12f), Fade(theme::kUiDark, 0.18f));
-    char scoreText[8];
-    std::snprintf(scoreText, sizeof(scoreText), "%d", score);
-    drawBoxText(font, name, box, 28.0f, 0.0f, theme::kLineWhite);
-    drawBoxText(font, scoreText, box, 36.0f, 1.0f, theme::kLineWhite);
-}
-
-void drawScorebug(const Game& game, const RenderContext& context, int playClockSeconds) {
-    const Font& font = context.assets.font();
-    constexpr float kHeight = kScorebugHeight;
-    constexpr float kTeamWidth = 175.0f;
-    constexpr float kDownWidth = 170.0f;
-    constexpr float kBallOnWidth = 120.0f;
-    constexpr float kClockWidth = 80.0f;
-    constexpr float kTotalWidth = 2.0f * kTeamWidth + kDownWidth + kBallOnWidth + kClockWidth;
-
-    const float x0 = (static_cast<float>(GetScreenWidth()) - kTotalWidth) / 2.0f;
-    const float y =
-        static_cast<float>(GetScreenHeight() - kHelpBarHeight - kScorebugMargin) - kHeight;
-
-    // Drop shadow, then the dark base the segments sit on.
-    DrawRectangleRec(Rectangle{x0 + 4.0f, y + 4.0f, kTotalWidth, kHeight}, theme::shadow(0.5f));
-    DrawRectangleRec(Rectangle{x0, y, kTotalWidth, kHeight}, theme::panel(0.92f));
-
-    float x = x0;
-    const Drive& drive = game.drive();
-    drawTeamSegment(font, Rectangle{x, y, kTeamWidth, kHeight}, theme::kHome, theme::kHomeName,
-                    drive.homeScore());
-    x += kTeamWidth;
-    drawTeamSegment(font, Rectangle{x, y, kTeamWidth, kHeight}, theme::kAway, theme::kAwayName,
-                    drive.awayScore());
-    x += kTeamWidth;
-
-    char text[24];
-    formatDownAndDistance(game, text, sizeof(text));
-    drawBoxText(font, text, Rectangle{x, y, kDownWidth, kHeight}, 30.0f, 0.5f, theme::kLineWhite);
-    x += kDownWidth;
-
-    formatBallOn(game.world().lineOfScrimmageX(), text, sizeof(text));
-    drawBoxText(font, text, Rectangle{x, y, kBallOnWidth, kHeight}, 26.0f, 0.5f, theme::kLineWhite);
-    x += kBallOnWidth;
-
-    // Separator lines between the info segments.
-    for (const float sx : {x0 + 2.0f * kTeamWidth + kDownWidth, x}) {
-        DrawLineEx(Vector2{sx, y + 8.0f}, Vector2{sx, y + kHeight - 8.0f}, 1.0f,
-                   Fade(theme::kLineWhite, 0.25f));
-    }
-
-    std::snprintf(text, sizeof(text), ":%02d", playClockSeconds);
-    const Color clockColor = playClockSeconds <= 5 ? theme::kAway : theme::kLineWhite;
-    drawBoxText(font, text, Rectangle{x, y, kClockWidth, kHeight}, 30.0f, 0.5f, clockColor);
-
-    // Thin rule across the top edge, a common broadcast detail.
-    DrawRectangleRec(Rectangle{x0, y - 3.0f, kTotalWidth, 3.0f}, theme::kLineWhite);
-}
-
 } // namespace
 
 int hudBottomInset(bool polish) {
-    return kHelpBarHeight + (polish ? kScorebugMargin + static_cast<int>(kScorebugHeight) : 0);
+    return polish ? broadcast::bottomInset() : kHelpBarHeight;
 }
 
 void drawHud(const Game& game, const RenderContext& context) {
@@ -241,7 +164,7 @@ void drawHud(const Game& game, const RenderContext& context) {
     const World& world = game.world();
     if (context.polish) {
         broadcast::drawPlayCallBanner(game, context.assets);
-        drawScorebug(game, context, playClockSeconds);
+        broadcast::drawScorebug(game, context.assets);
         broadcast::drawControlsBar(world, context.assets);
         return;
     }
