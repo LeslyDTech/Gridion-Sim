@@ -18,7 +18,7 @@ namespace {
 constexpr int kWindowWidth = 1280;
 constexpr int kWindowHeight = 720;
 constexpr double kSimulationHz = 60.0;
-constexpr float kPixelsPerYard = 16.0f; // 720 px tall window shows 45 of the 53 yards of width
+constexpr float kPixelsPerYard = 15.0f; // fits both wide receivers above the scorebug at 720p
 
 // F3 cycles through these render caps to show that simulation speed does not depend on them.
 constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
@@ -50,6 +50,7 @@ App::App()
     : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"), m_assets(assetDirectory()),
       m_timestep(1.0 / kSimulationHz), m_camera(kPixelsPerYard) {
     SetTargetFPS(kFpsCaps[0]);
+    applyCameraInset();
     loadGame();
 }
 
@@ -103,6 +104,8 @@ void App::runSimulationSteps(int steps) {
     m_stats.updateMs = smooth(m_stats.updateMs, elapsed.count() / steps);
 }
 
+void App::applyCameraInset() { m_camera.setBottomInset(render::hudBottomInset(m_polish)); }
+
 void App::handleAppCommands() {
     const AppCommands& commands = m_input.appCommands();
     if (commands.toggleDebug) {
@@ -110,6 +113,7 @@ void App::handleAppCommands() {
     }
     if (commands.togglePolish) {
         m_polish = !m_polish;
+        applyCameraInset();
     }
     if (commands.cycleFpsCap) {
         m_fpsCapIndex = (m_fpsCapIndex + 1) % static_cast<int>(kFpsCaps.size());
@@ -140,6 +144,9 @@ void App::render(float alpha, float frameSeconds) {
     BeginMode2D(m_camera.raylibCamera());
     render::drawField(context);
     render::drawLineOfScrimmage(world, context);
+    if (world.phase() == PlayPhase::PreSnap) {
+        render::drawFirstDownLine(m_game->drive().firstDownLineX(), context);
+    }
     m_overlay.drawGrid(world.spatialHash());
     render::drawRoutes(world, context, m_effects.routeOpacity());
     if (m_polish) {
@@ -154,7 +161,7 @@ void App::render(float alpha, float frameSeconds) {
     if (m_polish) {
         m_effects.drawResultPopup(context);
     }
-    render::drawHud(*m_game, context);
+    render::drawHud(*m_game, context, m_effects.playClockSeconds());
 
     const int players = static_cast<int>(world.players().size());
     m_stats.fps = GetFPS();

@@ -69,6 +69,10 @@ void Game::setupPlay() {
 
 void Game::advanceToNextPlay() {
     m_ballSpot = nextBallSpot(m_world.outcome(), m_ballSpot);
+    if (m_drive.recordPlay(m_world.outcome(), m_ballSpot.x) == DriveEvent::TurnoverOnDowns) {
+        // We only play offense, so a turnover simply starts a new drive.
+        m_ballSpot = {Drive::kNewDriveLineX, field::kCenterY};
+    }
     m_playIndex = (m_playIndex + 1) % m_playbook.size();
     ++m_playsRun;
     setupPlay();

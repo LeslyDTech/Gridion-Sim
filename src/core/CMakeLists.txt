@@ -3,6 +3,7 @@
 add_library(gridiron_core STATIC
     Ball.cpp
     Collision.cpp
+    Drive.cpp
     FixedTimestep.cpp
     Game.cpp
     PlayerAi.cpp

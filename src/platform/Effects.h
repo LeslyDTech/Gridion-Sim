@@ -37,6 +37,10 @@ public:
     // Playbook overlay opacity: 1 before the snap, fading to 0 over half a second after it.
     float routeOpacity() const;
 
+    // Broadcast play clock: counts down from 40 while the offense is lined up, freezes at the
+    // snap. Presentation only: there is no delay-of-game rule.
+    int playClockSeconds() const;
+
     // Camera: 1 = normal, < 1 = zoomed out while a deep pass is in the air.
     float zoomFactor() const { return m_zoom; }
     // Camera shake offset in yards (non-zero for a moment after a tackle).
@@ -77,6 +81,7 @@ private:
 
     PlayPhase m_previousPhase = PlayPhase::PreSnap;
     float m_secondsSinceSnap = 0.0f;
+    float m_playClock = 40.0f;
     float m_time = 0.0f;
     float m_trauma = 0.0f; // 0..1, shake strength is trauma^2
     float m_zoom = 1.0f;

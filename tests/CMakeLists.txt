@@ -1,6 +1,7 @@
 # gridiron_tests links gridiron_core but NOT raylib, which proves the game logic builds and
 # runs headless.
 add_executable(gridiron_tests
+    test_drive.cpp
     test_fixed_timestep.cpp
     test_play_loader.cpp
     test_player_state.cpp

@@ -22,6 +22,10 @@ public:
     void follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight,
                 float zoomFactor = 1.0f, Vec2 shake = {});
 
+    // Pixels at the bottom of the screen covered by HUD (the scorebug). The camera centers the
+    // field in the area above it, so no player is ever hidden behind the HUD.
+    void setBottomInset(int pixels) { m_bottomInset = pixels; }
+
     const Camera2D& raylibCamera() const { return m_camera; }
 
     // World (yards) -> screen (pixels), for text drawn on top of the world.
@@ -34,6 +38,7 @@ private:
 
     Camera2D m_camera{};
     float m_baseZoom;
+    int m_bottomInset = 0;
     Vec2 m_center;
 };
 

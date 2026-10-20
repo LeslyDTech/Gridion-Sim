@@ -30,11 +30,13 @@ FollowCamera::FollowCamera(float pixelsPerYard) : m_baseZoom(pixelsPerYard) {
 }
 
 void FollowCamera::snapTo(Vec2 focus, int screenWidth, int screenHeight) {
+    screenHeight -= m_bottomInset;
     apply(clampToField(focus, screenWidth, screenHeight), {}, screenWidth, screenHeight);
 }
 
 void FollowCamera::follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight,
                           float zoomFactor, Vec2 shake) {
+    screenHeight -= m_bottomInset; // only the area above the HUD counts as the view
     // Zoom is already smoothed by the caller (Effects), so apply it directly.
     m_camera.zoom = m_baseZoom * zoomFactor;
     const float t = 1.0f - std::exp(-kFollowSharpness * frameSeconds);

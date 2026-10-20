@@ -133,6 +133,15 @@ void drawLineOfScrimmage(const World& world, const RenderContext& /*context*/) {
                Fade(ColorBrightness(theme::kHome, 0.5f), 0.9f));
 }
 
+void drawFirstDownLine(float x, const RenderContext& context) {
+    if (context.polish) {
+        // Broadcast-style: a soft glow under a solid gold line.
+        DrawRectangleRec(Rectangle{x - 0.35f, 0.0f, 0.7f, field::kWidth},
+                         Fade(theme::kAccent, 0.2f));
+    }
+    DrawLineEx(Vector2{x, 0.0f}, Vector2{x, field::kWidth}, 0.22f, Fade(theme::kAccent, 0.9f));
+}
+
 void drawRoutes(const World& world, const RenderContext& context, float opacity) {
     // Plain mode: routes simply disappear at the snap.
     if (!context.polish && world.phase() != PlayPhase::PreSnap) {

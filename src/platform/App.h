@@ -34,6 +34,7 @@ private:
     void loadGame();
     void runSimulationSteps(int steps);
     void handleAppCommands();
+    void applyCameraInset();
     void render(float alpha, float frameSeconds);
     void renderLoadError() const;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Drive.h"
 #include "PlayDefinition.h"
 #include "World.h"
 
@@ -10,8 +11,8 @@ namespace gridiron {
 // Where the next play starts, given how the last one ended (pure, so it is easy to test).
 Vec2 nextBallSpot(const PlayOutcome& outcome, Vec2 previousSpot);
 
-// The sequence of plays: sets up the World, waits while the result is shown, spots the ball and
-// moves on to the next play in the playbook.
+// The sequence of plays: sets up the World, waits while the result is shown, spots the ball,
+// updates the drive (down, distance, score) and moves on to the next play in the playbook.
 class Game {
 public:
     static constexpr float kResultSeconds = 2.5f; // how long the result banner stays up
@@ -22,6 +23,7 @@ public:
     void step(const InputCommands& input, float dt);
 
     const World& world() const { return m_world; }
+    const Drive& drive() const { return m_drive; }
     const PlayDefinition& currentPlay() const { return m_playbook[m_playIndex]; }
     const PlayDefinition& defense() const { return m_defense; }
     int playsRun() const { return m_playsRun; }
@@ -38,6 +40,7 @@ private:
     std::size_t m_playIndex = 0;
     Vec2 m_ballSpot;
     World m_world;
+    Drive m_drive;
     float m_resultTimer = 0.0f;
     int m_playsRun = 0;
     bool m_playJustStarted = true;

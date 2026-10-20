@@ -18,6 +18,9 @@ struct FrameStats {
 // The always-on performance readout plus the F1 debug view (grid, collision counter, states).
 class DebugOverlay {
 public:
+    // Screen space the stats panel occupies on the left, so the HUD can avoid it.
+    static constexpr int kPanelRight = 416;
+
     void toggle() { m_enabled = !m_enabled; }
     bool enabled() const { return m_enabled; }
 

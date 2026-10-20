@@ -56,7 +56,8 @@ void DebugOverlay::drawGrid(const SpatialHash& grid) const {
 
 void DebugOverlay::drawStats(const FrameStats& stats) const {
     const int lines = m_enabled ? 4 : 3;
-    DrawRectangle(kPadding, kPadding, 400, lines * kLineHeight + kPadding * 2, theme::panel(0.6f));
+    DrawRectangle(kPadding, kPadding, kPanelRight - kPadding, lines * kLineHeight + kPadding * 2,
+                  theme::panel(0.6f));
 
     char buffer[96];
     if (stats.fpsCap > 0) {

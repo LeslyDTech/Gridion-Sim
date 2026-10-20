@@ -15,6 +15,7 @@ namespace {
 constexpr float kTurnSharpness = 12.0f; // how quickly the facing indicator follows velocity
 constexpr float kMinTurnSpeed = 1.0f;   // below this speed (yd/s) keep the old facing
 constexpr float kRouteFadeSeconds = 0.5f;
+constexpr float kPlayClockSeconds = 40.0f;
 
 constexpr float kDeepPassYards = 15.0f; // passes longer than this zoom the camera out
 constexpr float kDeepPassZoom = 0.72f;
@@ -83,7 +84,11 @@ void Effects::update(const World& world, float frameSeconds) {
         onPlayEnded(world.outcome());
     }
     if (phase == PlayPhase::PreSnap) {
-        m_popup.active = false; // a new play has been set up
+        if (m_previousPhase != PlayPhase::PreSnap) {
+            m_popup.active = false; // a new play has been set up
+            m_playClock = kPlayClockSeconds;
+        }
+        m_playClock = std::max(0.0f, m_playClock - frameSeconds);
     }
     m_previousPhase = phase;
 
@@ -173,6 +178,8 @@ Vec2 Effects::facing(int playerId) const {
     const auto index = static_cast<std::size_t>(playerId);
     return index < m_facing.size() ? m_facing[index] : Vec2{1.0f, 0.0f};
 }
+
+int Effects::playClockSeconds() const { return static_cast<int>(std::ceil(m_playClock)); }
 
 float Effects::routeOpacity() const {
     return std::clamp(1.0f - m_secondsSinceSnap / kRouteFadeSeconds, 0.0f, 1.0f);
