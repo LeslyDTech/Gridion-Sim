@@ -21,7 +21,9 @@ void drawPlayers(const World& world, const RenderContext& context, const Effects
 void drawBall(const World& world, const RenderContext& context);
 
 // --- Screen space (after EndMode2D) ---
-void drawPlayerLabels(const World& world, const RenderContext& context, bool showStates);
+// `debug` (F1) adds every player's state and shows all jersey numbers; with polish on and debug
+// off, only skill-position numbers (QB, running backs, receivers, tight ends) are shown.
+void drawPlayerLabels(const World& world, const RenderContext& context, bool debug);
 
 } // namespace render
 } // namespace gridiron

@@ -175,6 +175,48 @@ void drawStraightRoute(const Player& player, Color color) {
     DrawCircleV(toRaylib(player.route.back()), 0.3f, color);
 }
 
+// The players a viewer tracks: the ones who can carry or catch the ball. Linemen and defenders
+// stay unlabeled in the polished view to keep the screen readable.
+bool isSkillPosition(Role role) {
+    switch (role) {
+    case Role::QB:
+    case Role::HB:
+    case Role::FB:
+    case Role::WR:
+    case Role::TE:
+        return true;
+    case Role::OL:
+    case Role::DL:
+    case Role::LB:
+    case Role::CB:
+    case Role::S:
+        break;
+    }
+    return false;
+}
+
+bool showJerseyNumber(const Player& player, const RenderContext& context, bool debug) {
+    return !context.polish || debug || isSkillPosition(player.role);
+}
+
+void drawCenteredText(const char* text, Vector2 center, int fontSize, Color color);
+
+// Inside the circle, or under the sprite (the sprite's head would be covered otherwise), with a
+// dark shadow so it reads on the bright grass.
+void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard, bool sprites) {
+    char text[4];
+    std::snprintf(text, sizeof(text), "%d", player.jersey);
+    if (sprites) {
+        const Vector2 below{center.x,
+                            center.y + (player.attributes.radius + 0.45f) * pixelsPerYard};
+        drawCenteredText(text, Vector2{below.x + 1.0f, below.y + 1.0f}, 12, theme::shadow(0.8f));
+        drawCenteredText(text, below, 12, theme::kLineWhite);
+    } else {
+        const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
+        drawCenteredText(text, center, fontSize, theme::kLineWhite);
+    }
+}
+
 // Text centered on a screen point.
 void drawCenteredText(const char* text, Vector2 center, int fontSize, Color color) {
     const int width = MeasureText(text, fontSize);
@@ -294,7 +336,7 @@ void drawBall(const World& world, const RenderContext& context) {
 
 // ================================================================ screen space
 
-void drawPlayerLabels(const World& world, const RenderContext& context, bool showStates) {
+void drawPlayerLabels(const World& world, const RenderContext& context, bool debug) {
     const float pixelsPerYard = context.camera.pixelsPerYard();
     const bool canThrow =
         world.ball().state == BallState::Held || world.phase() == PlayPhase::PreSnap;
@@ -303,19 +345,9 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool sho
     for (const Player& player : world.players()) {
         const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
 
-        // Jersey number: inside the circle, or under the sprite (the sprite's head would be
-        // covered otherwise), with a dark shadow so it reads on the bright grass.
         const bool sprites = context.polish && spriteFor(player, context.assets) != nullptr;
-        std::snprintf(buffer, sizeof(buffer), "%d", player.jersey);
-        if (sprites) {
-            const Vector2 below{center.x,
-                                center.y + (player.attributes.radius + 0.45f) * pixelsPerYard};
-            drawCenteredText(buffer, Vector2{below.x + 1.0f, below.y + 1.0f}, 12,
-                             theme::shadow(0.8f));
-            drawCenteredText(buffer, below, 12, theme::kLineWhite);
-        } else {
-            const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
-            drawCenteredText(buffer, center, fontSize, theme::kLineWhite);
+        if (showJerseyNumber(player, context, debug)) {
+            drawJerseyNumber(player, center, pixelsPerYard, sprites);
         }
 
         // Throw-button badge above each eligible receiver.
@@ -329,7 +361,7 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool sho
             drawCenteredText(buffer, badge, 14, theme::kLineWhite);
         }
 
-        if (showStates) {
+        if (debug) {
             const float offset = sprites ? 1.3f : 0.5f; // stay clear of the jersey number
             const Vector2 below{center.x,
                                 center.y + (player.attributes.radius + offset) * pixelsPerYard};
