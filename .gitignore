@@ -1,0 +1,14 @@
+# Build output (CMake, FetchContent downloads)
+build/
+out/
+cmake-build-*/
+
+# Editors / IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+
+# OS clutter
+.DS_Store
+Thumbs.db
