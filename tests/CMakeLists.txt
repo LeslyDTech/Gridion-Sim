@@ -7,11 +7,13 @@ add_executable(gridiron_tests
     test_play_loader.cpp
     test_player_state.cpp
     test_route.cpp
+    test_scene_stack.cpp
+    test_settings.cpp
     test_spatial_hash.cpp
     test_world.cpp
 )
 
-target_link_libraries(gridiron_tests PRIVATE gridiron_core Catch2::Catch2WithMain)
+target_link_libraries(gridiron_tests PRIVATE gridiron_core gridiron_app Catch2::Catch2WithMain)
 gridiron_set_warnings(gridiron_tests)
 
 # Lets tests read the real play files in data/ without depending on the working directory.

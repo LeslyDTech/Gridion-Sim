@@ -8,12 +8,13 @@ add_executable(gridiron
     Effects.cpp
     FieldRenderer.cpp
     FollowCamera.cpp
+    GameScene.cpp
     Hud.cpp
     InputDevice.cpp
     Renderer.cpp
 )
 
-target_link_libraries(gridiron PRIVATE gridiron_core raylib)
+target_link_libraries(gridiron PRIVATE gridiron_core gridiron_app raylib)
 gridiron_set_warnings(gridiron)
 
 # Copy data/ (play JSON files) and assets/ (fonts) next to the executable after every build,

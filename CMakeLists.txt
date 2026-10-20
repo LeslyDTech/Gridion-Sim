@@ -31,6 +31,7 @@ include(CompilerWarnings)
 include(Dependencies)
 
 add_subdirectory(src/core)
+add_subdirectory(src/platform/app) # raylib-free app layer (scenes, settings): always built, tested
 
 if(GRIDIRON_BUILD_GAME)
     add_subdirectory(src/platform)

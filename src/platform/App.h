@@ -1,15 +1,13 @@
 #pragma once
 
+#include "AppContext.h"
 #include "Assets.h"
-#include "BroadcastHud.h"
 #include "DebugOverlay.h"
-#include "Effects.h"
-#include "FollowCamera.h"
 #include "InputDevice.h"
-#include "core/FixedTimestep.h"
-#include "core/Game.h"
+#include "app/SceneManager.h"
+#include "app/Settings.h"
 
-#include <optional>
+#include <filesystem>
 #include <string>
 
 namespace gridiron {
@@ -24,35 +22,39 @@ public:
     RaylibWindow& operator=(const RaylibWindow&) = delete;
 };
 
-// Owns the window, the game and everything platform-specific, and runs the main loop:
-//   poll input -> run N fixed 60 Hz simulation steps -> render once, interpolated by alpha.
+// RAII owner of the audio device (master volume lives here, set from Settings).
+class AudioDevice {
+public:
+    AudioDevice();
+    ~AudioDevice();
+    AudioDevice(const AudioDevice&) = delete;
+    AudioDevice& operator=(const AudioDevice&) = delete;
+};
+
+// The application shell: window, audio, settings, input, and the scene stack. Each frame:
+//   poll input -> app keys (F1/F2/F3) -> update the top scene -> draw the stack -> fade.
+// Everything game-specific lives in scenes (GameScene, menus...).
 class App {
 public:
     App();
+    ~App();
     void run();
 
 private:
-    void loadGame();
-    void runSimulationSteps(int steps);
     void handleAppCommands();
-    void applyCameraSafeArea();
-    void render(float alpha, float frameSeconds);
-    void renderLoadError() const;
+    void applySettings();
+    void drawFrame();
 
     RaylibWindow m_window; // first: everything below needs the window
+    AudioDevice m_audio;
+    std::filesystem::path m_settingsPath;
+    Settings m_settings;
     Assets m_assets;
     InputDevice m_input;
-    FixedTimestep m_timestep;
-    FollowCamera m_camera;
     DebugOverlay m_overlay;
-    Effects m_effects;
-    render::broadcast::HudAnimator m_hudAnimator;
-    FrameSample m_frame; // measurements of the current frame, handed to the debug overlay
+    SceneManager m_scenes;
+    AppContext m_context;
     int m_fpsCapIndex = 0;
-    bool m_polish = true; // F2: all visual polish on/off, for before/after screenshots
-
-    // Empty if the play files failed to load; the error is then shown on screen instead.
-    std::optional<Game> m_game;
     std::string m_loadError;
 };
 
