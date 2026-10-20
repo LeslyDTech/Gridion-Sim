@@ -2,6 +2,7 @@
 # runs headless.
 add_executable(gridiron_tests
     test_fixed_timestep.cpp
+    test_play_loader.cpp
     test_player_state.cpp
     test_route.cpp
 )

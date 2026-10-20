@@ -63,6 +63,7 @@ struct Player {
     Vec2 position;
     Vec2 previousPosition; // position at the previous fixed step, for render interpolation
     Vec2 velocity;
+    Vec2 homePosition; // where the player lined up; zone defenders hold near it
 
     std::vector<Vec2> route; // absolute field waypoints (empty if not a route runner)
     std::size_t nextWaypoint = 0;

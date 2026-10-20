@@ -4,6 +4,10 @@
 #include "FollowCamera.h"
 #include "InputDevice.h"
 #include "core/FixedTimestep.h"
+#include "core/Game.h"
+
+#include <optional>
+#include <string>
 
 namespace gridiron {
 
@@ -17,7 +21,7 @@ public:
     RaylibWindow& operator=(const RaylibWindow&) = delete;
 };
 
-// Owns the window, the input device and the camera, and runs the main loop:
+// Owns the window, the game and everything platform-specific, and runs the main loop:
 //   poll input -> run N fixed 60 Hz simulation steps -> render once, interpolated by alpha.
 class App {
 public:
@@ -25,9 +29,11 @@ public:
     void run();
 
 private:
+    void loadGame();
     void runSimulationSteps(int steps);
     void handleAppCommands();
     void render(float alpha, float frameSeconds);
+    void renderLoadError() const;
 
     RaylibWindow m_window;
     InputDevice m_input;
@@ -37,10 +43,9 @@ private:
     FrameStats m_stats;
     int m_fpsCapIndex = 0;
 
-    // Temporary for step 2: a marker steered with the arrow keys, so the camera and
-    // interpolation can be seen before players exist. Replaced by Game in a later step.
-    Vec2 m_marker;
-    Vec2 m_previousMarker;
+    // Empty if the play files failed to load; the error is then shown on screen instead.
+    std::optional<Game> m_game;
+    std::string m_loadError;
 };
 
 } // namespace gridiron
