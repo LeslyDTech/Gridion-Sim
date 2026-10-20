@@ -14,6 +14,22 @@ struct AppCommands {
     bool resetZoom = false;   // middle mouse button: back to the automatic camera
 };
 
+// Menu navigation for one rendered frame (menus update once per frame, so no latching needed).
+struct MenuCommands {
+    bool up = false;
+    bool down = false;
+    bool left = false;
+    bool right = false;
+    bool confirm = false; // Enter / gamepad A
+    bool back = false;    // Esc / Backspace / gamepad B
+    bool pause = false;   // Esc / gamepad Start, in game
+    bool anyKey = false;  // any key, mouse button or gamepad button ("PRESS START")
+    float mouseX = 0.0f;
+    float mouseY = 0.0f;
+    bool mouseMoved = false;
+    bool mouseClicked = false;
+};
+
 // The single input abstraction: merges keyboard and the first gamepad into device-independent
 // commands.
 //
@@ -31,9 +47,15 @@ public:
     // App commands for this rendered frame.
     const AppCommands& appCommands() const { return m_app; }
 
+    // Menu navigation for this rendered frame.
+    const MenuCommands& menuCommands() const { return m_menu; }
+
 private:
+    void pollMenu();
+
     InputCommands m_pending;
     AppCommands m_app;
+    MenuCommands m_menu;
 };
 
 } // namespace gridiron

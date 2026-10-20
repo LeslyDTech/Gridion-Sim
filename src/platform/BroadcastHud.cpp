@@ -3,6 +3,7 @@
 #include "Assets.h"
 #include "Easing.h"
 #include "Theme.h"
+#include "UiDraw.h"
 #include "core/FieldGeometry.h"
 #include "core/Game.h"
 
@@ -17,70 +18,16 @@ namespace {
 
 using namespace theme::hud;
 
-// Figma font size -> raylib font size. raylib scales a TTF so ascender - descender equals the
-// requested size; CSS/Figma scale by the em square. Barlow Condensed's ascender - descender is
-// 1.2 em (1000 - (-200) units at 1000 units/em), so a 20 px Figma label is a 24 px raylib label,
-// and its text box lines up exactly with the Figma layer's box.
-constexpr float kFigmaToRaylibFontScale = 1.2f;
-
-// ---------------------------------------------------------------- text and shape helpers
-
-float pixelSize(const TextStyle& style) { return style.size * kFigmaToRaylibFontScale; }
-
-const Font& fontFor(const Assets& assets, const TextStyle& style) {
-    return assets.hudFont(style.weight, pixelSize(style));
-}
-
-Vector2 measure(const Assets& assets, const TextStyle& style, const char* text) {
-    return MeasureTextEx(fontFor(assets, style), text, pixelSize(style), 0.0f);
-}
-
-// Draws text with its Figma text box's top-left corner at `topLeft`, snapped to whole pixels so
-// glyphs rasterized at this exact size stay sharp.
-void drawText(const Assets& assets, const TextStyle& style, const char* text, Vector2 topLeft,
-              Color color) {
-    DrawTextEx(fontFor(assets, style), text, Vector2{std::round(topLeft.x), std::round(topLeft.y)},
-               pixelSize(style), 0.0f, color);
-}
-
-// Text vertically centered in `box`, `align` 0 = left edge + padding, 1 = right edge - padding.
-void drawTextInBox(const Assets& assets, const TextStyle& style, const char* text, Rectangle box,
-                   float paddingX, float align) {
-    const Vector2 size = measure(assets, style, text);
-    const float x = box.x + paddingX + (box.width - 2.0f * paddingX - size.x) * align;
-    const float y = box.y + (box.height - size.y) / 2.0f;
-    drawText(assets, style, text, Vector2{x, y}, style.color);
-}
-
-// Rounded rectangle with a corner radius in pixels (raylib takes a 0-1 "roundness").
-void fillRounded(Rectangle rect, float radius, Color color) {
-    const float shortSide = std::min(rect.width, rect.height);
-    DrawRectangleRounded(rect, shortSide > 0.0f ? 2.0f * radius / shortSide : 0.0f, 8, color);
-}
-
-// Figma groups clip their children to the rounded corners ("overflow: clip"). To draw a child
-// that touches a corner (an accent strip, an end segment, a selected last row), fill the whole
-// rounded parent in the child's color, but only inside the child's rectangle.
-void fillClippedToRounded(Rectangle parent, float radius, Rectangle child, Color color) {
-    BeginScissorMode(static_cast<int>(std::floor(child.x)), static_cast<int>(std::floor(child.y)),
-                     static_cast<int>(std::ceil(child.width)),
-                     static_cast<int>(std::ceil(child.height)));
-    fillRounded(parent, radius, color);
-    EndScissorMode();
-}
-
-float screenWidth() { return static_cast<float>(GetScreenWidth()); }
-float screenHeight() { return static_cast<float>(GetScreenHeight()); }
-
-// Copies `text` into `out` in upper case (ASCII), as Figma's "uppercase" text style does.
-void toUpper(const char* text, char* out, std::size_t size) {
-    std::size_t i = 0;
-    for (; text[i] != '\0' && i + 1 < size; ++i) {
-        const char c = text[i];
-        out[i] = (c >= 'a' && c <= 'z') ? static_cast<char>(c - 'a' + 'A') : c;
-    }
-    out[i] = '\0';
-}
+using ui::drawText;
+using ui::drawTextInBox;
+using ui::fillClippedToRounded;
+using ui::fillRounded;
+using ui::fontFor;
+using ui::measure;
+using ui::pixelSize;
+using ui::screenHeight;
+using ui::screenWidth;
+using ui::toUpper;
 
 // ---------------------------------------------------------------- game-state formatting
 

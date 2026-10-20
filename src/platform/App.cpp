@@ -114,7 +114,8 @@ void App::drawFrame() {
     // Scene transition: fade through black.
     const float fade = m_scenes.fadeAlpha();
     if (fade > 0.0f) {
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, fade));
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
+                      Fade(theme::menu::kSceneFade, fade));
     }
     EndDrawing();
 }

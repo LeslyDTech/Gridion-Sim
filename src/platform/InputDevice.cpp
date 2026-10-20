@@ -74,11 +74,48 @@ void InputDevice::poll() {
         }
     }
 
+    pollMenu();
+
     m_app.toggleDebug = IsKeyPressed(KEY_F1) || gamepadPressed(GAMEPAD_BUTTON_MIDDLE_LEFT);
     m_app.togglePolish = IsKeyPressed(KEY_F2);
     m_app.cycleFpsCap = IsKeyPressed(KEY_F3);
     m_app.zoomNotches = GetMouseWheelMove();
     m_app.resetZoom = IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE);
+}
+
+void InputDevice::pollMenu() {
+    const bool pad = IsGamepadAvailable(kGamepad);
+    auto padPressed = [&](int button) { return pad && IsGamepadButtonPressed(kGamepad, button); };
+
+    m_menu.up =
+        IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W) || padPressed(GAMEPAD_BUTTON_LEFT_FACE_UP);
+    m_menu.down =
+        IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S) || padPressed(GAMEPAD_BUTTON_LEFT_FACE_DOWN);
+    m_menu.left =
+        IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A) || padPressed(GAMEPAD_BUTTON_LEFT_FACE_LEFT);
+    m_menu.right = IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D) ||
+                   padPressed(GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
+    m_menu.confirm = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER) ||
+                     padPressed(GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    m_menu.back = IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE) ||
+                  padPressed(GAMEPAD_BUTTON_RIGHT_FACE_RIGHT);
+    m_menu.pause = IsKeyPressed(KEY_ESCAPE) || padPressed(GAMEPAD_BUTTON_MIDDLE_RIGHT);
+
+    const Vector2 mouse = GetMousePosition();
+    const Vector2 delta = GetMouseDelta();
+    m_menu.mouseX = mouse.x;
+    m_menu.mouseY = mouse.y;
+    m_menu.mouseMoved = delta.x != 0.0f || delta.y != 0.0f;
+    m_menu.mouseClicked = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+
+    bool anyPad = false;
+    if (pad) {
+        for (int button = GAMEPAD_BUTTON_LEFT_FACE_UP; button <= GAMEPAD_BUTTON_RIGHT_THUMB;
+             ++button) {
+            anyPad = anyPad || IsGamepadButtonPressed(kGamepad, button);
+        }
+    }
+    m_menu.anyKey = GetKeyPressed() != 0 || anyPad || m_menu.mouseClicked;
 }
 
 InputCommands InputDevice::consumeForStep() {

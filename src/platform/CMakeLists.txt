@@ -11,7 +11,10 @@ add_executable(gridiron
     GameScene.cpp
     Hud.cpp
     InputDevice.cpp
+    MenuWidgets.cpp
+    PauseScene.cpp
     Renderer.cpp
+    UiDraw.cpp
 )
 
 target_link_libraries(gridiron PRIVATE gridiron_core gridiron_app raylib)

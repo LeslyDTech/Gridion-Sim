@@ -42,6 +42,9 @@ public:
     // Transparent in the middle, dark at the edges; stretched over the whole screen.
     const Texture2D& vignette() const { return m_vignette; }
 
+    // The menus' "Soft field vignette" (Figma), stretched over the whole screen.
+    const Texture2D& softFieldVignette() const { return m_softFieldVignette; }
+
     // Soft round shadow: dark in the middle, fading to fully transparent at the edge.
     const Texture2D& softShadow() const { return m_softShadow; }
 
@@ -63,13 +66,14 @@ private:
     bool m_hasDebugFont = false;
     Texture2D m_vignette{};
     Texture2D m_softShadow{};
+    Texture2D m_softFieldVignette{};
 
     struct HudFont {
         theme::hud::Weight weight;
         int pixelSize;
         Font font;
     };
-    static constexpr std::size_t kHudFontCount = 7;
+    static constexpr std::size_t kHudFontCount = 14;
     std::array<HudFont, kHudFontCount> m_hudFonts{};
     std::array<Texture2D, kSkinTones> m_homeSprites{};
     std::array<Texture2D, kSkinTones> m_awaySprites{};

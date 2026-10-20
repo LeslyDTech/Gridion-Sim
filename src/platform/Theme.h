@@ -146,3 +146,134 @@ inline constexpr TextStyle kControlsBarInstructions{Weight::SemiBold, 14.0f, {25
 inline constexpr Color kControlsBarInstructionsKey = kWhite; // key names are full white
 
 } // namespace gridiron::theme::hud
+
+// =================================================================================================
+// Menus and full-screen scenes (Figma page "Page 2": Loading 8:344, Title 8:369, Main Menu 8:389,
+// Pause 8:423). Same units and conventions as theme::hud; constants reuse the HUD's where the
+// values match (panel dark, home blue, accent yellow, ink, selected-row style).
+// =================================================================================================
+namespace gridiron::theme::menu {
+
+using hud::TextStyle;
+using hud::Weight;
+
+// Figma line heights (multiples of the font size); "normal" is 1.2 for Barlow Condensed.
+inline constexpr float kLineHeightNone = 1.0f;
+inline constexpr float kLineHeightNormal = 1.2f;
+
+inline constexpr Color kWhite80{255, 255, 255, 204}; // rgba(255,255,255,0.8)
+inline constexpr Color kWhite70{255, 255, 255, 179}; // rgba(255,255,255,0.7)
+inline constexpr Color kWhite50{255, 255, 255, 128}; // rgba(255,255,255,0.5)
+
+// --- Shared backdrop: "Field darkening overlay" + "Soft field vignette" ---
+inline constexpr Color kFieldDarkeningOverlay{0, 0, 0, 102}; // rgba(0,0,0,0.4)
+// Radial gradient centered on the screen, radii 704 x 432 at 1280 x 720 (55% / 60% of the
+// screen): clear out to 45% of the radius, then to rgba(0,0,0,0.502) at the edge.
+inline constexpr float kSoftFieldVignetteRadiusX = 704.0f / 1280.0f;
+inline constexpr float kSoftFieldVignetteRadiusY = 432.0f / 720.0f;
+inline constexpr float kSoftFieldVignetteClearUntil = 0.45f;
+inline constexpr unsigned char kSoftFieldVignetteEdgeAlpha = 128;
+// "Football field" placeholder: only drawn on the Loading screen, where the real field (attract
+// mode) cannot run yet. The Figma green #2ECC71 is the darker grass-tile stripe.
+inline constexpr Color kFootballField = kGrassDark;
+inline constexpr float kVerticalYardLineSpacing = 128.0f;
+inline constexpr Color kVerticalYardLine = hud::kWhite;
+inline constexpr Color kSceneFade{0, 0, 0, 255}; // scene transitions fade through black
+
+// --- "GRIDIRON SIM brand" ---
+inline constexpr const char* kGridironSimLogoText = "GRIDIRON SIM";
+inline constexpr TextStyle kGridironSimLogoLarge{Weight::Bold, 96.0f,
+                                                 hud::kWhite}; // Loading, Title
+inline constexpr TextStyle kGridironSimLogoSmall{Weight::Bold, 48.0f, hud::kWhite}; // Main Menu
+inline constexpr float kBrandUnderlineHeight = 3.0f;
+inline constexpr Color kBrandUnderline = hud::kAccentYellow;
+
+// --- Loading (8:344) ---
+inline constexpr float kLoadingBrandTop = 248.0f;
+inline constexpr float kLoadingBrandUnderlineTop = 248.0f + 112.0f;
+inline constexpr float kLoadingBrandUnderlineWidth = 96.0f;
+inline constexpr float kAssetLoadingProgressTop = 408.0f;
+inline constexpr float kAssetLoadingProgressWidth = 480.0f;
+inline constexpr float kProgressTrackHeight = 12.0f;
+inline constexpr Color kProgressTrack = hud::kInk;
+inline constexpr Color kProgressFill = hud::kHomeBlue;
+inline constexpr float kLoadingStatusOffsetY = 24.0f;
+inline constexpr TextStyle kLoadingStatus{Weight::SemiBold, 14.0f, kWhite70}; // % and asset path
+inline constexpr TextStyle kLoadingError{Weight::SemiBold, 14.0f, kAway};
+inline constexpr float kGameplayTipPillTop = 624.0f;
+inline constexpr float kGameplayTipPillHeight = 40.0f;
+inline constexpr float kGameplayTipPillPaddingX = 24.0f;
+inline constexpr float kGameplayTipPillCornerRadius = 4.0f;
+inline constexpr Color kGameplayTipPillBackground = hud::kPanel;
+inline constexpr TextStyle kReceiverTip{Weight::SemiBold, 18.0f, hud::kWhite};
+inline constexpr float kLoadingMinimumSeconds = 1.0f; // spec: never just flash
+inline constexpr float kTipSeconds = 2.5f;            // rotate the tip this often
+
+// --- Title (8:369) ---
+inline constexpr float kTitleBrandTop = 240.0f;
+inline constexpr float kGameSubtitleTop = 360.0f;
+inline constexpr const char* kGameSubtitleText = "TOP-DOWN FOOTBALL";
+inline constexpr TextStyle kGameSubtitle{Weight::SemiBold, 18.0f, hud::kWhite};
+inline constexpr float kPressStartTop = 440.0f;
+inline constexpr const char* kPressStartText = "PRESS START";
+inline constexpr TextStyle kPressStart{Weight::Bold, 28.0f, hud::kAccentYellow};
+inline constexpr float kPressStartDimOpacity = 0.4f; // the "pulse dim state" layer
+inline constexpr float kPressStartPulseSeconds = 1.0f;
+inline constexpr const char* kBuildVersionText = "v0.1";
+inline constexpr TextStyle kBuildVersion{Weight::SemiBold, 12.0f, kWhite50};
+inline constexpr float kBuildVersionRight = 32.0f;  // 1280 - 1248
+inline constexpr float kBuildVersionBottom = 48.0f; // 720 - 672
+
+// --- Main Menu (8:389) ---
+inline constexpr float kMainMenuBrandLeft = 64.0f;
+inline constexpr float kMainMenuBrandTop = 56.0f;
+inline constexpr float kMainMenuBrandUnderlineTop = 56.0f + 60.0f;
+inline constexpr float kMainMenuBrandUnderlineWidth = 48.0f;
+inline constexpr float kMainMenuOptionsLeft = 64.0f;
+inline constexpr float kMainMenuOptionsTop = 200.0f;
+inline constexpr float kMainMenuOptionsWidth = 360.0f;
+// Rows: the Pause frame's tight spacing (no gap) is used for every menu, per the spec; the Main
+// Menu frame itself has an 8 px gap.
+inline constexpr float kMenuOptionHeight = 52.0f;
+inline constexpr float kMenuOptionGap = 0.0f;
+inline constexpr float kMenuOptionPaddingX = 24.0f;
+inline constexpr TextStyle kOptionLabel{Weight::Bold, 24.0f, kWhite80};
+inline constexpr Color kOptionLabelSelected = hud::kWhite;
+inline constexpr Color kSelectedMenuOptionFill = hud::kPlaySelectPanelSelectedFill;
+inline constexpr float kSelectedMenuOptionBorderWidth = hud::kPlaySelectPanelSelectedBorderWidth;
+inline constexpr Color kSelectedMenuOptionBorder = hud::kPlaySelectPanelSelectedBorder;
+inline constexpr float kSelectedOptionInformationRight = 128.0f; // 1280 - (752 + 400)
+inline constexpr float kSelectedOptionInformationTop = 200.0f;
+inline constexpr float kSelectedOptionInformationWidth = 400.0f;
+inline constexpr float kSelectedOptionInformationHeight = 240.0f;
+inline constexpr float kSelectedOptionInformationPadding = 32.0f;
+inline constexpr float kSelectedOptionInformationGap = 16.0f;
+inline constexpr float kSelectedOptionInformationCornerRadius = 4.0f;
+inline constexpr Color kSelectedOptionInformationBackground = hud::kPanel;
+inline constexpr float kInformationAccentWidth = 4.0f;
+inline constexpr Color kInformationAccent = hud::kHomeBlue;
+inline constexpr TextStyle kSelectedOptionTitle{Weight::Bold, 28.0f, hud::kWhite};
+inline constexpr float kSelectedOptionTitleLineHeight = 1.1f;
+inline constexpr TextStyle kSelectedOptionDescription{Weight::SemiBold, 24.0f, kWhite80};
+inline constexpr float kSelectedOptionDescriptionLineHeight = 1.35f;
+inline constexpr float kNavigationControlsBarHeight = 28.0f;
+inline constexpr Color kNavigationControlsBarBackground = hud::kPanel;
+inline constexpr TextStyle kNavigationInstructions{Weight::SemiBold, 14.0f, kWhite70};
+// UTF-8: U+2191 U+2193 arrows, U+00B7 middle dots.
+inline constexpr const char* kNavigationInstructionsText =
+    "\xE2\x86\x91\xE2\x86\x93 NAVIGATE \xC2\xB7 ENTER / (A) SELECT \xC2\xB7 ESC / (B) BACK";
+
+// --- Pause (8:423) ---
+inline constexpr float kPauseMenuPanelSize = 400.0f;
+inline constexpr float kPauseMenuPanelCenterOffsetY = -8.0f; // top 152 = centered 160 - 8
+inline constexpr float kPauseMenuPanelCornerRadius = 4.0f;
+inline constexpr Color kPauseMenuPanelBackground = hud::kPanel;
+inline constexpr const char* kPausedTitleText = "PAUSED";
+inline constexpr TextStyle kPausedTitle{Weight::Bold, 40.0f, hud::kWhite};
+inline constexpr float kPausedTitleTop = 24.0f;
+inline constexpr float kPausedTitleLineHeight = 1.2f;
+inline constexpr float kPauseMenuOptionsLeft = 24.0f;
+inline constexpr float kPauseMenuOptionsTop = 104.0f;
+inline constexpr float kPauseMenuOptionsWidth = 352.0f;
+
+} // namespace gridiron::theme::menu

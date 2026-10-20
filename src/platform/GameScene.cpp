@@ -4,14 +4,17 @@
 #include "FieldRenderer.h"
 #include "Hud.h"
 #include "InputDevice.h"
+#include "PauseScene.h"
 #include "Renderer.h"
 #include "Theme.h"
+#include "app/SceneManager.h"
 
 #include <raylib.h>
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <memory>
 
 namespace gridiron {
 namespace {
@@ -90,6 +93,9 @@ GameScene::GameScene(AppContext& context, GameMode mode)
 }
 
 void GameScene::update(float frameSeconds) {
+    if (m_context.input.menuCommands().pause && !m_context.scenes.transitioning()) {
+        m_context.scenes.push(std::make_unique<PauseScene>(m_context, *this));
+    }
     handleCameraZoom();
     runSimulationSteps(m_timestep.advance(frameSeconds));
     m_alpha = static_cast<float>(m_timestep.alpha());

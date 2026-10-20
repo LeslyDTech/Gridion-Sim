@@ -2,6 +2,7 @@
 
 #include "Theme.h"
 
+#include <algorithm>
 #include <cmath>
 #include <string>
 #include <utility>
@@ -101,11 +102,14 @@ Texture2D loadTexture(const std::filesystem::path& path) {
 
 // Rasterizes a TTF at one exact pixel size: ASCII plus U+00B7 (the middle dot used in the HUD).
 Font loadFontAtSize(const std::filesystem::path& path, int pixelSize) {
-    std::array<int, 96> codepoints{};
+    // ASCII, plus the middle dot and up/down arrows used by the HUD and menu instruction bars.
+    std::array<int, 98> codepoints{};
     for (int i = 0; i < 95; ++i) {
         codepoints[static_cast<std::size_t>(i)] = 32 + i;
     }
-    codepoints[95] = 0x00B7;
+    codepoints[95] = 0x00B7; // middle dot
+    codepoints[96] = 0x2191; // up arrow
+    codepoints[97] = 0x2193; // down arrow
     const int count = static_cast<int>(codepoints.size());
     Font font = LoadFontEx(path.string().c_str(), pixelSize, codepoints.data(), count);
     if (!IsFontValid(font)) {
@@ -144,6 +148,37 @@ Font loadFontAtSize(const std::filesystem::path& path, int pixelSize) {
         SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
     }
     return font;
+}
+
+// The menus' "Soft field vignette" from Figma: an elliptical radial gradient (radii 704 x 432 on a
+// 1280 x 720 screen), clear out to 45% of the radius, then fading to 50% black at the edge and
+// beyond. Computed per pixel at low resolution and stretched over the screen; it is a smooth
+// gradient, so bilinear filtering hides the low resolution.
+Texture2D makeSoftFieldVignette() {
+    using namespace theme::menu;
+    constexpr int kWidth = 320;
+    constexpr int kHeight = 180;
+    std::vector<Color> pixels(static_cast<std::size_t>(kWidth * kHeight));
+    for (int y = 0; y < kHeight; ++y) {
+        for (int x = 0; x < kWidth; ++x) {
+            // Pixel center relative to the screen center, in units of the ellipse radii.
+            const float u =
+                ((static_cast<float>(x) + 0.5f) / kWidth - 0.5f) / kSoftFieldVignetteRadiusX;
+            const float v =
+                ((static_cast<float>(y) + 0.5f) / kHeight - 0.5f) / kSoftFieldVignetteRadiusY;
+            const float t = std::sqrt(u * u + v * v);
+            const float ramp = std::clamp((t - kSoftFieldVignetteClearUntil) /
+                                              (1.0f - kSoftFieldVignetteClearUntil),
+                                          0.0f, 1.0f);
+            pixels[static_cast<std::size_t>(y * kWidth + x)] =
+                Color{0, 0, 0, static_cast<unsigned char>(ramp * kSoftFieldVignetteEdgeAlpha)};
+        }
+    }
+    // The Image only borrows `pixels`: LoadTextureFromImage copies them to the GPU.
+    const Image image{pixels.data(), kWidth, kHeight, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+    Texture2D texture = LoadTextureFromImage(image);
+    SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+    return texture;
 }
 
 void unload(Texture2D& texture) {
@@ -186,6 +221,8 @@ Assets::Assets(const std::filesystem::path& assetDirectory) : m_defaultFont(GetF
     UnloadImage(shadow);
     SetTextureFilter(m_softShadow, TEXTURE_FILTER_BILINEAR);
 
+    m_softFieldVignette = makeSoftFieldVignette();
+
     // Kenney Sports Pack (CC0): blue jerseys for the offense, orange for the defense.
     const std::filesystem::path players = assetDirectory / "sprites" / "players";
     for (int i = 0; i < kSkinTones; ++i) {
@@ -195,18 +232,26 @@ Assets::Assets(const std::filesystem::path& assetDirectory) : m_defaultFont(GetF
     }
     m_ball = loadTexture(assetDirectory / "sprites" / "ball_football.png");
 
-    // HUD text sizes: Figma font size x1.2 (see theme::hud). Bold: 14, 18, 20, 28, 64 px;
-    // SemiBold: 14, 16 px.
+    // HUD and menu text sizes: Figma font size x1.2 (see ui::kFigmaToRaylibFontScale).
+    //   Bold:     14, 18, 20, 24, 28, 40, 48, 64, 96 px
+    //   SemiBold: 12, 14, 16, 18, 24 px
     using theme::hud::Weight;
     const std::filesystem::path fonts = assetDirectory / "fonts";
     constexpr std::array<std::pair<Weight, int>, kHudFontCount> kSizes = {{
         {Weight::Bold, 17},
         {Weight::Bold, 22},
         {Weight::Bold, 24},
+        {Weight::Bold, 29},
         {Weight::Bold, 34},
+        {Weight::Bold, 48},
+        {Weight::Bold, 58},
         {Weight::Bold, 77},
+        {Weight::Bold, 115},
+        {Weight::SemiBold, 14},
         {Weight::SemiBold, 17},
         {Weight::SemiBold, 19},
+        {Weight::SemiBold, 22},
+        {Weight::SemiBold, 29},
     }};
     for (std::size_t i = 0; i < kSizes.size(); ++i) {
         const auto [weight, size] = kSizes[i];
@@ -245,6 +290,7 @@ Assets::~Assets() {
         UnloadFont(m_debugFont);
     }
     UnloadTexture(m_softShadow);
+    UnloadTexture(m_softFieldVignette);
     UnloadTexture(m_vignette);
     if (m_hasCustomFont) {
         UnloadFont(m_font); // the default font belongs to raylib
