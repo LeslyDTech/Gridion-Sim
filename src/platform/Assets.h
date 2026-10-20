@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Theme.h"
 #include "core/Player.h"
 
 #include <raylib.h>
@@ -28,6 +29,10 @@ public:
     // The broadcast TTF font, or raylib's built-in font if the file was missing.
     const Font& font() const { return m_hasCustomFont ? m_font : m_defaultFont; }
 
+    // Broadcast HUD font (Barlow Condensed) rasterized at `pixelSize`, or the nearest size that
+    // was preloaded (Hud draws at exactly those sizes). Falls back to font() if missing.
+    const Font& hudFont(theme::hud::Weight weight, float pixelSize) const;
+
     // Transparent in the middle, dark at the edges; stretched over the whole screen.
     const Texture2D& vignette() const { return m_vignette; }
 
@@ -46,6 +51,14 @@ private:
     Font m_defaultFont{};
     bool m_hasCustomFont = false;
     Texture2D m_vignette{};
+
+    struct HudFont {
+        theme::hud::Weight weight;
+        int pixelSize;
+        Font font;
+    };
+    static constexpr std::size_t kHudFontCount = 7;
+    std::array<HudFont, kHudFontCount> m_hudFonts{};
     std::array<Texture2D, kSkinTones> m_homeSprites{};
     std::array<Texture2D, kSkinTones> m_awaySprites{};
     Texture2D m_ball{};

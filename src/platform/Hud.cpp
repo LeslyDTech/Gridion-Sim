@@ -1,6 +1,7 @@
 #include "Hud.h"
 
 #include "Assets.h"
+#include "BroadcastHud.h"
 #include "DebugOverlay.h"
 #include "Text.h"
 #include "Theme.h"
@@ -229,20 +230,6 @@ void drawScorebug(const Game& game, const RenderContext& context, int playClockS
     DrawRectangleRec(Rectangle{x0, y - 3.0f, kTotalWidth, 3.0f}, theme::kLineWhite);
 }
 
-void drawPlayCallTag(const Game& game, const RenderContext& context) {
-    const Font& font = context.assets.font();
-    char buffer[128];
-    std::snprintf(buffer, sizeof(buffer), "%s  vs  %s", game.currentPlay().name.c_str(),
-                  game.defense().name.c_str());
-    const float size = 26.0f;
-    const Vector2 measured = MeasureTextEx(font, buffer, size, 1.0f);
-    const float x = topBarCenterX() - measured.x / 2.0f;
-    DrawRectangleRec(Rectangle{x - 14.0f, 10.0f, measured.x + 28.0f, 36.0f}, theme::panel(0.75f));
-    DrawRectangleRec(Rectangle{x - 14.0f, 10.0f, 4.0f, 36.0f}, theme::kHome);
-    DrawTextEx(font, buffer, Vector2{x, 10.0f + (36.0f - measured.y) / 2.0f}, size, 1.0f,
-               theme::kLineWhite);
-}
-
 } // namespace
 
 int hudBottomInset(bool polish) {
@@ -253,15 +240,16 @@ void drawHud(const Game& game, const RenderContext& context) {
     const int playClockSeconds = game.playClockSeconds();
     const World& world = game.world();
     if (context.polish) {
-        drawPlayCallTag(game, context);
+        broadcast::drawPlayCallBanner(game, context.assets);
         drawScorebug(game, context, playClockSeconds);
-    } else {
-        drawPlainTopBar(game, playClockSeconds);
-        if (world.phase() == PlayPhase::Over) {
-            drawResultBanner(world.outcome()); // polish uses the animated popup instead
-        }
+        broadcast::drawControlsBar(world, context.assets);
+        return;
     }
-    drawControlsHelp(world, context.polish ? &context.assets.font() : nullptr);
+    drawPlainTopBar(game, playClockSeconds);
+    if (world.phase() == PlayPhase::Over) {
+        drawResultBanner(world.outcome()); // polish uses the animated popup instead
+    }
+    drawControlsHelp(world, nullptr);
 }
 
 } // namespace gridiron::render

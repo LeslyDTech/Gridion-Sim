@@ -3,6 +3,7 @@ add_executable(gridiron
     main.cpp
     App.cpp
     Assets.cpp
+    BroadcastHud.cpp
     DebugOverlay.cpp
     Effects.cpp
     FieldRenderer.cpp
