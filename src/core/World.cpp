@@ -104,7 +104,29 @@ float contactMass(const Player& self, const Player& other) {
     return self.attributes.mass * (bullsThrough ? kShedMassMultiplier : 1.0f);
 }
 
+// Tackling tuning.
+constexpr float kMinTackleChance = 0.15f;
+constexpr float kMaxTackleChance = 0.95f;
+constexpr float kHeadOnBonus = 0.15f;         // +15% head-on, -15% from directly behind
+constexpr float kCarrierSpeedPenalty = 0.25f; // at 10 yd/s
+constexpr float kClosingSpeedBonus = 0.20f;   // at 10 yd/s
+constexpr float kMissedTackleSeconds = 0.6f;  // stumble after a miss
+constexpr float kStumbleSpeedFactor = 0.35f;
+
 } // namespace
+
+float tackleChance(const PlayerAttributes& defender, Vec2 defenderVelocity, Vec2 carrierVelocity,
+                   Vec2 toDefender) {
+    float chance = defender.tackling;
+    // Head-on: the defender is in front of the carrier's run (+1); chasing from behind: -1.
+    const float facing = dot(normalized(carrierVelocity), toDefender);
+    chance += kHeadOnBonus * facing;
+    chance -= kCarrierSpeedPenalty * (length(carrierVelocity) / 10.0f);
+    // Closing speed: how fast the defender is moving into the carrier.
+    const float closing = std::max(0.0f, dot(defenderVelocity, -toDefender));
+    chance += kClosingSpeedBonus * (closing / 10.0f);
+    return std::clamp(chance, kMinTackleChance, kMaxTackleChance);
+}
 
 float blockHoldSeconds(const PlayerAttributes& blocker, const PlayerAttributes& defender) {
     return kBaseBlockHoldSeconds * blocker.blocking / std::max(defender.shedding, 0.05f);
@@ -119,7 +141,9 @@ World::World() : m_spatialHash(kGridMin, kGridMax, kGridCellSize) {
     m_candidatePairs.reserve(kMaxPairs);
 }
 
-void World::setup(const PlayDefinition& offense, const PlayDefinition& defense, Vec2 ballSpot) {
+void World::setup(const PlayDefinition& offense, const PlayDefinition& defense, Vec2 ballSpot,
+                  unsigned seed) {
+    m_random.seed(seed);
     m_players.clear();
     m_phase = PlayPhase::PreSnap;
     m_outcome = {};
@@ -218,13 +242,16 @@ void World::resolveCollisions(float dt) {
             continue;
         }
         separate(a, b, *contact);
-        if (m_phase == PlayPhase::Live && (isTackle(a, b) || isTackle(b, a))) {
-            Player& carrier = a.state == PlayerState::BallCarrier ? a : b;
-            carrier.handle(PlayerEvent::Tackled);
-            endPlay(PlayResult::Tackled, carrier.position);
+        if (m_phase == PlayPhase::Live) {
+            if (canAttemptTackle(a, b)) {
+                attemptTackle(a, b);
+            } else if (canAttemptTackle(b, a)) {
+                attemptTackle(b, a);
+            }
         }
     }
     updateBlockEngagement(dt);
+    updateTackleTimers(dt);
 }
 
 void World::recordBlockContact(const Player& blocker, const Player& defender) {
@@ -274,9 +301,30 @@ void World::checkBallCarrierPosition() {
     }
 }
 
-bool World::isTackle(const Player& carrier, const Player& defender) {
+bool World::canAttemptTackle(const Player& carrier, const Player& defender) {
     return carrier.state == PlayerState::BallCarrier && defender.team == Team::Defense &&
-           (defender.state == PlayerState::Pursuing || defender.state == PlayerState::Covering);
+           (defender.state == PlayerState::Pursuing || defender.state == PlayerState::Covering) &&
+           defender.missedTackleSeconds <= 0.0f;
+}
+
+void World::attemptTackle(Player& carrier, Player& defender) {
+    const Vec2 toDefender = normalized(defender.position - carrier.position);
+    const float chance =
+        tackleChance(defender.attributes, defender.velocity, carrier.velocity, toDefender);
+    std::uniform_real_distribution<float> roll(0.0f, 1.0f);
+    if (roll(m_random) < chance) {
+        carrier.handle(PlayerEvent::Tackled);
+        endPlay(PlayResult::Tackled, carrier.position);
+        return;
+    }
+    // Broken tackle: the defender stumbles and can't try again for a moment.
+    defender.missedTackleSeconds = kMissedTackleSeconds;
+}
+
+void World::updateTackleTimers(float dt) {
+    for (Player& player : m_players) {
+        player.missedTackleSeconds = std::max(0.0f, player.missedTackleSeconds - dt);
+    }
 }
 
 void World::separate(Player& a, Player& b, const Contact& contact) {
@@ -398,6 +446,9 @@ void World::movePlayers(const InputCommands& input, float dt) {
         }
         if (player.engaged) {
             m_desiredVelocities[i] *= kEngagedSpeedFactor; // held up by a block
+        }
+        if (player.missedTackleSeconds > 0.0f) {
+            m_desiredVelocities[i] *= kStumbleSpeedFactor; // stumbling after a missed tackle
         }
     }
 

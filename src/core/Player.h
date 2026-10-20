@@ -79,6 +79,8 @@ struct Player {
     bool engaged = false;        // in contact with a blocker this step
     float engagedSeconds = 0.0f; // how long the current block has held
     float shedSeconds = 0.0f;    // > 0: just shed a block, free to move for this long
+    // > 0: just missed a tackle; stumbling, and can't try again until this runs out.
+    float missedTackleSeconds = 0.0f;
 
     int blockTargetId = kNone;  // blockers: the defender assigned this step (World::assignBlocks)
     int coverTargetId = kNone;  // man-coverage receiver's id

@@ -116,6 +116,35 @@ TEST_CASE("Pass protection gives the quarterback time in the pocket", "[world]")
     CHECK(static_cast<float>(steps) * kDt >= 2.5f);
 }
 
+TEST_CASE("Tackle chance: head-on beats from behind, speed makes a carrier harder to stop",
+          "[world]") {
+    const PlayerAttributes linebacker = attributesFor(Role::LB);
+    const Vec2 running{8.0f, 0.0f}; // carrier running downfield at 8 yd/s
+    const Vec2 standing{};
+
+    // Defender in front of the carrier (head-on) vs directly behind him.
+    const float headOn = tackleChance(linebacker, standing, running, {1.0f, 0.0f});
+    const float fromBehind = tackleChance(linebacker, standing, running, {-1.0f, 0.0f});
+    CHECK(headOn > fromBehind);
+
+    // Same angle, carrier at full speed vs jogging.
+    const float slowCarrier = tackleChance(linebacker, standing, {3.0f, 0.0f}, {1.0f, 0.0f});
+    CHECK(slowCarrier > headOn);
+
+    // Driving into the carrier helps.
+    const float closing = tackleChance(linebacker, {-6.0f, 0.0f}, running, {1.0f, 0.0f});
+    CHECK(closing > headOn);
+}
+
+TEST_CASE("Tackle chance never reaches certainty or zero", "[world]") {
+    PlayerAttributes great = attributesFor(Role::LB);
+    great.tackling = 1.0f;
+    PlayerAttributes poor = attributesFor(Role::QB);
+    poor.tackling = 0.0f;
+    CHECK(tackleChance(great, {-10.0f, 0.0f}, {}, {1.0f, 0.0f}) <= 0.95f);
+    CHECK(tackleChance(poor, {}, {10.0f, 0.0f}, {-1.0f, 0.0f}) >= 0.15f);
+}
+
 TEST_CASE("nextBallSpot moves the ball to the tackle, between the hashes", "[game]") {
     const Vec2 start{35.0f, field::kCenterY};
 

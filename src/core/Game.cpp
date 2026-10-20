@@ -81,7 +81,9 @@ void Game::step(const InputCommands& input, float dt) {
 int Game::playClockSeconds() const { return static_cast<int>(std::ceil(m_playClock)); }
 
 void Game::setupPlay() {
-    m_world.setup(m_playbook[m_playIndex], m_defense, m_ballSpot);
+    // A different (but reproducible) seed for every play, so broken tackles vary play to play.
+    m_world.setup(m_playbook[m_playIndex], m_defense, m_ballSpot,
+                  static_cast<unsigned>(m_playsRun) + 1u);
     m_resultTimer = 0.0f;
     m_playJustStarted = true;
 }
