@@ -95,6 +95,14 @@ const Texture2D* spriteFor(const Player& player, const Assets& assets) {
     return assets.playerSprite(player.team, player.jersey);
 }
 
+// Ring around the receiver a pass is thrown to: light blue, so it can't be mistaken for the ball
+// carrier's white ring (and yellow stays reserved for the first-down line).
+void drawTargetRing(Vector2 center, float radius, double time) {
+    const float pulse = 0.05f * static_cast<float>(std::sin(time * 9.0));
+    DrawRing(center, radius + 0.1f, radius + 0.28f + pulse, 0.0f, 360.0f, 32,
+             Fade(ColorBrightness(theme::kHome, 0.35f), 0.95f));
+}
+
 void drawCarrierRing(Vector2 center, float radius, double time) {
     const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
     DrawRing(center, radius + 0.12f, radius + 0.34f + pulse, 0.0f, 360.0f, 32,
@@ -113,9 +121,12 @@ void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 cen
     const float yardsPerPixel = shoulderWidth / static_cast<float>(sprite.height);
 
     drawSoftShadow(context, center, shoulderWidth);
+    // Rings are sized to the drawn sprite, so they still surround it at the minimum size.
+    const float ringRadius = std::max(radius, shoulderWidth * 0.45f);
     if (player.state == PlayerState::BallCarrier) {
-        // Ring sized to the drawn sprite, so it still surrounds it at the minimum size.
-        drawCarrierRing(center, std::max(radius, shoulderWidth * 0.45f), context.time);
+        drawCarrierRing(center, ringRadius, context.time);
+    } else if (player.state == PlayerState::ReceivingPass) {
+        drawTargetRing(center, ringRadius, context.time);
     }
     // A tackled player is drawn darker. (WHITE = the sprite's own colors, untinted.)
     const Color tint =
@@ -374,6 +385,19 @@ void drawLineOfScrimmage(const World& world, const RenderContext& /*context*/) {
     const float x = world.lineOfScrimmageX();
     DrawLineEx(Vector2{x, 0.0f}, Vector2{x, field::kWidth}, 0.2f,
                Fade(ColorBrightness(theme::kHome, 0.5f), 0.9f));
+}
+
+void drawPassTarget(const World& world, const RenderContext& context) {
+    const Ball& ball = world.ball();
+    if (!context.polish || ball.state != BallState::InAir) {
+        return;
+    }
+    // Where the ball will come down: a pulsing ring with a center dot, under the players.
+    const float pulse = 0.5f + 0.5f * static_cast<float>(std::sin(context.time * 8.0));
+    const Vector2 spot = toRaylib(ball.target);
+    DrawRing(spot, 0.7f + 0.15f * pulse, 0.85f + 0.15f * pulse, 0.0f, 360.0f, 32,
+             Fade(theme::kLineWhite, 0.8f));
+    DrawCircleV(spot, 0.14f, Fade(theme::kLineWhite, 0.9f));
 }
 
 void drawFirstDownLine(float x, const RenderContext& context) {

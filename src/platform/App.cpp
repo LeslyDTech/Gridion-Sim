@@ -207,6 +207,7 @@ void App::render(float alpha, float frameSeconds) {
     }
     m_overlay.drawGrid(world.spatialHash());
     render::drawRoutes(world, context, m_effects.routeOpacity());
+    render::drawPassTarget(world, context);
     if (m_polish) {
         m_effects.drawParticles();
     }
