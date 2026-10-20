@@ -11,7 +11,8 @@ namespace gridiron {
 // BeginMode2D(camera.raylibCamera()), one unit is one yard.
 class FollowCamera {
 public:
-    explicit FollowCamera(float pixelsPerYard);
+    // `visibleYardsAcross`: how many yards of field fit across the window at normal zoom.
+    explicit FollowCamera(float visibleYardsAcross);
 
     // Jump straight to a point (used when a new play is set up).
     void snapTo(Vec2 focus, int screenWidth, int screenHeight);
@@ -35,9 +36,10 @@ public:
 private:
     Vec2 clampToField(Vec2 center, int screenWidth, int screenHeight) const;
     void apply(Vec2 center, Vec2 shake, int screenWidth, int screenHeight);
+    float baseZoom(int screenWidth) const;
 
     Camera2D m_camera{};
-    float m_baseZoom;
+    float m_visibleYardsAcross;
     int m_bottomInset = 0;
     Vec2 m_center;
 };

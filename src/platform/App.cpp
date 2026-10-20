@@ -18,7 +18,7 @@ namespace {
 constexpr int kWindowWidth = 1280;
 constexpr int kWindowHeight = 720;
 constexpr double kSimulationHz = 60.0;
-constexpr float kPixelsPerYard = 15.0f; // fits both wide receivers above the scorebug at 720p
+constexpr float kVisibleYardsAcross = 32.0f; // close, broadcast-style framing on the ball
 
 // F3 cycles through these render caps to show that simulation speed does not depend on them.
 constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
@@ -48,7 +48,7 @@ RaylibWindow::~RaylibWindow() { CloseWindow(); }
 
 App::App()
     : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"), m_assets(assetDirectory()),
-      m_timestep(1.0 / kSimulationHz), m_camera(kPixelsPerYard) {
+      m_timestep(1.0 / kSimulationHz), m_camera(kVisibleYardsAcross) {
     SetTargetFPS(kFpsCaps[0]);
     applyCameraInset();
     loadGame();
