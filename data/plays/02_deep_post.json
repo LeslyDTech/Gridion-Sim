@@ -12,7 +12,7 @@
     { "slot": "TE", "role": "TE", "jersey": 87, "x": -1.0, "y": 6.9, "assignment": "route",
       "route": [[6.0, 0.0], [6.5, 7.0]] },
 
-    { "slot": "HB", "role": "HB", "jersey": 28, "x": -5.0, "y": 1.5, "assignment": "block" },
+    { "slot": "HB", "role": "HB", "jersey": 28, "x": -5.0, "y": 2.0, "assignment": "block" },
     { "slot": "QB", "role": "QB", "jersey": 12, "x": -5.0, "y": 0.0, "assignment": "none" },
     { "slot": "LT", "role": "OL", "jersey": 76, "x": -0.7, "y": -4.6, "assignment": "block" },
     { "slot": "LG", "role": "OL", "jersey": 66, "x": -0.7, "y": -2.3, "assignment": "block" },

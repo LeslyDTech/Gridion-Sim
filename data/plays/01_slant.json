@@ -11,7 +11,7 @@
       "route": [[4.0, 0.0], [10.0, -6.0], [20.0, -11.0]] },
     { "slot": "TE", "role": "TE", "jersey": 87, "x": -1.0, "y": 6.9, "assignment": "route",
       "route": [[2.0, 0.0], [4.0, 6.0], [5.0, 14.0]] },
-    { "slot": "HB", "role": "HB", "jersey": 28, "x": -5.0, "y": -1.5, "assignment": "route",
+    { "slot": "HB", "role": "HB", "jersey": 28, "x": -5.0, "y": -2.0, "assignment": "route",
       "route": [[1.0, -1.0], [3.0, -5.0], [5.0, -6.0]] },
 
     { "slot": "QB", "role": "QB", "jersey": 12, "x": -5.0, "y": 0.0, "assignment": "none" },

@@ -43,6 +43,16 @@ void drawFacingIndicator(Vector2 center, float radius, Vec2 facing) {
 // drawn 2.08x the collision radius wide: slightly wider than the collision circle (as real
 // shoulders are), and small enough that linemen with 1-yard splits never visually overlap.
 constexpr float kSpriteShoulderToRadius = 2.08f;
+// When the camera pulls back to frame a wide formation, sprites would shrink to ~15 px. They are
+// never drawn smaller than this (long side, on screen). Purely visual: collisions still use the
+// physical radius, and the 1-yard line splits keep linemen apart even at this minimum.
+constexpr float kMinSpritePixels = 26.0f;
+
+// The sprite's long side (shoulders) in yards as drawn: physical size, or the on-screen minimum.
+float spriteShoulderYards(const Player& player, float pixelsPerYard) {
+    return std::max(kSpriteShoulderToRadius * player.attributes.radius,
+                    kMinSpritePixels / pixelsPerYard);
+}
 // The ball sprite's long axis is drawn at ~55 degrees (measured from its pixels), so that angle
 // is subtracted to line the ball up with its direction of travel.
 constexpr float kBallSpriteAxisDegrees = 54.7f;
@@ -94,12 +104,13 @@ void drawCarrierRing(Vector2 center, float radius, double time) {
 void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
                       const RenderContext& context) {
     const float radius = player.attributes.radius;
-    const float shoulderWidth = kSpriteShoulderToRadius * radius; // the sprite's long side
+    const float shoulderWidth = spriteShoulderYards(player, context.camera.pixelsPerYard());
     const float yardsPerPixel = shoulderWidth / static_cast<float>(sprite.height);
 
     drawSoftShadow(context, center, shoulderWidth);
     if (player.state == PlayerState::BallCarrier) {
-        drawCarrierRing(center, radius, context.time);
+        // Ring sized to the drawn sprite, so it still surrounds it at the minimum size.
+        drawCarrierRing(center, std::max(radius, shoulderWidth * 0.45f), context.time);
     }
     // A tackled player is drawn darker. (WHITE = the sprite's own colors, untinted.)
     const Color tint =
@@ -238,7 +249,10 @@ void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard,
         // to keep a wide formation in frame.
         constexpr float kMinNumberPixels = 12.0f;
         const float size = std::max(kMinNumberPixels, 0.5f * pixelsPerYard);
-        const Vector2 below{center.x, center.y + (player.attributes.radius + 0.4f) * pixelsPerYard};
+        // Just under the drawn sprite (its shoulders run vertically when facing downfield).
+        const float spriteHalfPixels =
+            spriteShoulderYards(player, pixelsPerYard) * pixelsPerYard / 2.0f;
+        const Vector2 below{center.x, center.y + spriteHalfPixels + size * 0.5f};
         text::drawCentered(font, number, Vector2{below.x + 1.5f, below.y + 1.5f}, size,
                            theme::shadow(0.8f));
         text::drawCentered(font, number, below, size, theme::kLineWhite);
@@ -280,7 +294,7 @@ void drawReceiverBadges(const World& world, const RenderContext& context) {
         const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
         // Distance from the player's center to the sprite's edge along the diagonal, plus the
         // badge radius and a small gap: the badge sits just beyond the top-left of the sprite.
-        const float spriteHalf = kSpriteShoulderToRadius * player.attributes.radius / 2.0f;
+        const float spriteHalf = spriteShoulderYards(player, pixelsPerYard) / 2.0f;
         const float diagonal =
             (spriteHalf * pixelsPerYard + kBadgeGapPixels) * 0.70710678f + kBadgeRadiusPixels;
         const Vector2 badge{std::round(center.x - diagonal), std::round(center.y - diagonal)};
