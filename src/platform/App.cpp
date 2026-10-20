@@ -175,7 +175,8 @@ void App::render(float alpha, float frameSeconds) {
 
     render::drawVignette(context);
     render::drawPlayerLabels(world, context, m_overlay.enabled());
-    render::drawHud(*m_game, context);
+    m_hudAnimator.update(*m_game, frameSeconds);
+    render::drawHud(*m_game, context, m_hudAnimator);
 
     m_frame.frameSeconds = frameSeconds;
     m_frame.collisionChecks = world.collisionChecks();

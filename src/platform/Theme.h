@@ -90,6 +90,9 @@ inline constexpr Color kPlaySelectPanelSelectedFill = kHomeBlue;
 inline constexpr float kPlaySelectPanelSelectedBorderWidth = 3.0f;
 inline constexpr Color kPlaySelectPanelSelectedBorder = kWhite;
 inline constexpr int kPlaySelectPanelRows = 4;
+// Slide out to the right once a play is chosen, back in when selection reopens (not in the
+// static frame; from the HUD spec).
+inline constexpr float kPlaySelectPanelSlideSeconds = 0.25f;
 
 // --- YardsGainedPopup/State=FirstDown (anchored to the screen center) ---
 inline constexpr float kYardsGainedPopupWidth = 240.0f;

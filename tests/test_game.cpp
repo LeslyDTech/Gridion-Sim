@@ -66,6 +66,25 @@ TEST_CASE("Number keys select a play only before the snap", "[game]") {
     CHECK(game.currentPlayIndex() == 2); // ignored while the play is live
 }
 
+TEST_CASE("Play selection: a number key chooses, Tab browses, a new play reopens it", "[game]") {
+    Game game = makeGame();
+    CHECK(game.selectingPlay());
+
+    InputCommands select;
+    select.selectPlay = 0; // the play that is already highlighted still counts as a choice
+    game.step(select, kDt);
+    CHECK_FALSE(game.selectingPlay());
+
+    InputCommands tab;
+    tab.nextPlay = true;
+    game.step(tab, kDt);
+    CHECK(game.selectingPlay());
+    CHECK(game.currentPlayIndex() == 1);
+
+    game.step(pressSnap(), kDt);
+    CHECK_FALSE(game.selectingPlay()); // live play
+}
+
 TEST_CASE("Out-of-range play selections are ignored", "[game]") {
     Game game = makeGame();
     InputCommands select;
@@ -97,4 +116,5 @@ TEST_CASE("The drive updates the moment a play ends and the play stays selected"
     CHECK(game.world().phase() == PlayPhase::PreSnap);
     CHECK(game.currentPlayIndex() == 2);
     CHECK(game.playClockSeconds() == 40); // reset for the new play
+    CHECK(game.selectingPlay());          // and the playbook is open again
 }

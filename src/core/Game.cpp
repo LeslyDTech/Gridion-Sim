@@ -48,11 +48,16 @@ void Game::step(const InputCommands& input, float dt) {
         if (input.selectPlay >= 0 &&
             static_cast<std::size_t>(input.selectPlay) < m_playbook.size()) {
             selectPlay(static_cast<std::size_t>(input.selectPlay));
+            m_playChosen = true; // a number key picks the play (even the one already highlighted)
             return;
         }
         if (input.nextPlay) {
             selectPlay((m_playIndex + 1) % m_playbook.size());
+            m_playChosen = false; // browsing: back to selection
             return;
+        }
+        if (input.snap) {
+            m_playChosen = true; // snapping runs the highlighted play
         }
         m_playClock = std::max(0.0f, m_playClock - dt);
     }
@@ -103,7 +108,8 @@ void Game::onPlayEnded() {
 void Game::advanceToNextPlay() {
     ++m_playsRun;
     m_playClock = kPlayClockSeconds;
-    setupPlay(); // same play stays selected
+    m_playChosen = false; // every new play starts with play selection
+    setupPlay();          // the same play stays highlighted
 }
 
 } // namespace gridiron

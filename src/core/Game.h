@@ -33,6 +33,10 @@ public:
     const PlayDefinition& defense() const { return m_defense; }
     int playsRun() const { return m_playsRun; }
 
+    // True while the user is picking a play: from the moment a play is set up until a play is
+    // chosen with a number key (or the ball is snapped). Tab browses plays and reopens selection.
+    bool selectingPlay() const { return m_world.phase() == PlayPhase::PreSnap && !m_playChosen; }
+
     // Whole seconds left on the play clock: counts down before the snap, frozen after it.
     // Presentation of a real rule clock only; running out has no penalty yet.
     int playClockSeconds() const;
@@ -67,6 +71,7 @@ private:
     float m_resultTimer = 0.0f;
     float m_playClock = kPlayClockSeconds;
     DriveEvent m_lastDriveEvent = DriveEvent::None;
+    bool m_playChosen = false;
     int m_playsRun = 0;
     bool m_playJustStarted = true;
 };

@@ -269,15 +269,27 @@ void drawPlayCallBanner(const Game& game, const Assets& assets) {
 
 // ================================================================ PlaySelectPanel/PreSnap
 
-void drawPlaySelectPanel(const Game& game, const Assets& assets) {
-    if (game.world().phase() != PlayPhase::PreSnap) {
-        return; // hidden from the snap until the next play is set up
+void HudAnimator::update(const Game& game, float frameSeconds) {
+    const float target = game.selectingPlay() ? 1.0f : 0.0f;
+    const float step = frameSeconds / kPlaySelectPanelSlideSeconds;
+    m_panelShown = target > m_panelShown ? std::min(target, m_panelShown + step)
+                                         : std::max(target, m_panelShown - step);
+}
+
+void drawPlaySelectPanel(const Game& game, const Assets& assets, float shown) {
+    if (shown <= 0.0f) {
+        return;
     }
     const auto& playbook = game.playbook();
     const int rows = std::min(kPlaySelectPanelRows, static_cast<int>(playbook.size()));
     const float height =
         kPlaySelectPanelHeaderHeight + static_cast<float>(rows) * kPlaySelectPanelRowHeight;
-    const Rectangle panel{screenWidth() - kPlaySelectPanelRight - kPlaySelectPanelWidth,
+    // Slide: at shown = 0 the panel sits just past the right edge of the screen. Ease-out on the
+    // way in, ease-in on the way out (the same curve, mirrored).
+    const float slide = 1.0f - easing::outCubic(shown);
+    const float offscreen = kPlaySelectPanelRight + kPlaySelectPanelWidth;
+    const Rectangle panel{std::round(screenWidth() - kPlaySelectPanelRight - kPlaySelectPanelWidth +
+                                     slide * offscreen),
                           kPlaySelectPanelTop, kPlaySelectPanelWidth, height};
 
     fillRounded(panel, kPlaySelectPanelCornerRadius, kPlaySelectPanelBackground);

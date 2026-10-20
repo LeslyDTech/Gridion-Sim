@@ -165,12 +165,13 @@ SafeArea hudSafeArea(bool polish) {
     return {kPlainTopBarBottom + kGap, static_cast<float>(kHelpBarHeight) + kGap, kGap};
 }
 
-void drawHud(const Game& game, const RenderContext& context) {
+void drawHud(const Game& game, const RenderContext& context,
+             const broadcast::HudAnimator& animator) {
     const int playClockSeconds = game.playClockSeconds();
     const World& world = game.world();
     if (context.polish) {
         broadcast::drawPlayCallBanner(game, context.assets);
-        broadcast::drawPlaySelectPanel(game, context.assets);
+        broadcast::drawPlaySelectPanel(game, context.assets, animator.playSelectPanelShown());
         broadcast::drawYardsGainedPopup(game, context.assets);
         broadcast::drawScorebug(game, context.assets);
         broadcast::drawControlsBar(world, context.assets);
