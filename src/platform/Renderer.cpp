@@ -69,7 +69,7 @@ const Texture2D* spriteFor(const Player& player, const Assets& assets) {
 void drawCarrierRing(Vector2 center, float radius, double time) {
     const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
     DrawRing(center, radius + 0.12f, radius + 0.34f + pulse, 0.0f, 360.0f, 32,
-             Fade(theme::kAccent, 0.9f));
+             Fade(theme::kLineWhite, 0.9f));
 }
 
 void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
@@ -101,7 +101,7 @@ void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing, doubl
     if (player.state == PlayerState::BallCarrier) {
         const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
         DrawRing(center, radius + 0.12f, radius + 0.34f + pulse, 0.0f, 360.0f, kSegments,
-                 Fade(theme::kAccent, 0.9f));
+                 Fade(theme::kLineWhite, 0.9f));
     }
 
     DrawCircleSector(center, radius, 0.0f, 360.0f, kSegments, teamColor(player.team));
@@ -109,27 +109,30 @@ void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing, doubl
     drawFacingIndicator(center, radius, facing);
 
     if (player.state == PlayerState::Tackled) {
-        DrawRing(center, radius + 0.1f, radius + 0.2f, 0.0f, 360.0f, kSegments, theme::kAccent);
+        DrawRing(center, radius + 0.1f, radius + 0.2f, 0.0f, 360.0f, kSegments, theme::kUiDark);
     }
 }
 
 void drawPlainPlayer(const Player& player, Vector2 center) {
     const float radius = player.attributes.radius;
     if (player.state == PlayerState::BallCarrier) {
-        DrawCircleV(center, radius + 0.3f, theme::kAccent);
+        DrawCircleV(center, radius + 0.3f, theme::kLineWhite);
     }
     DrawCircleV(center, radius, teamColor(player.team));
     DrawCircleLinesV(center, radius, theme::kLineWhite);
     if (player.state == PlayerState::Tackled) {
-        DrawCircleV(center, radius * 0.4f, theme::kAccent);
+        DrawCircleV(center, radius * 0.4f, theme::kUiDark);
     }
 }
 
 // Playbook-style route: straight legs with every cut rounded off by a short quadratic Bezier,
 // finished with an arrowhead. (A Catmull-Rom spline through the waypoints looks smoother but
 // overshoots at sharp cuts, which misrepresents the route.)
-void drawCurvedRoute(const Player& player, Color color) {
-    constexpr float kThickness = 0.2f;
+//
+// `grow` widens the line and arrowhead; the route is drawn twice, a slightly grown dark pass
+// first (the outline) and then the white route on top.
+void drawCurvedRoute(const Player& player, Color color, float grow) {
+    const float thickness = 0.12f + 2.0f * grow;
     constexpr float kMaxCornerRadius = 1.5f; // yards
 
     Vec2 legStart = player.homePosition;
@@ -146,20 +149,20 @@ void drawCurvedRoute(const Player& player, Color color) {
             {kMaxCornerRadius, 0.4f * distance(previous, corner), 0.4f * distance(corner, next)});
         const Vec2 entry = corner - normalized(corner - previous) * radius;
         const Vec2 exit = corner + normalized(next - corner) * radius;
-        DrawLineEx(toRaylib(legStart), toRaylib(entry), kThickness, color);
+        DrawLineEx(toRaylib(legStart), toRaylib(entry), thickness, color);
         DrawSplineSegmentBezierQuadratic(toRaylib(entry), toRaylib(corner), toRaylib(exit),
-                                         kThickness, color);
+                                         thickness, color);
         legStart = exit;
     }
     const Vec2 end = player.route.back();
-    DrawLineEx(toRaylib(legStart), toRaylib(end), kThickness, color);
+    DrawLineEx(toRaylib(legStart), toRaylib(end), thickness, color);
 
     // Arrowhead pointing along the final leg.
     const Vec2 dir = normalized(end - legStart);
     const Vec2 side{-dir.y, dir.x};
-    const Vec2 tip = end + dir * 0.7f;
-    const Vec2 left = end - dir * 0.1f + side * 0.5f;
-    const Vec2 right = end - dir * 0.1f - side * 0.5f;
+    const Vec2 tip = end + dir * (0.55f + 1.5f * grow);
+    const Vec2 left = end - dir * (0.1f + grow) + side * (0.38f + grow);
+    const Vec2 right = end - dir * (0.1f + grow) - side * (0.38f + grow);
     DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), color);
 }
 
@@ -191,11 +194,12 @@ void drawLineOfScrimmage(const World& world, const RenderContext& /*context*/) {
 
 void drawFirstDownLine(float x, const RenderContext& context) {
     if (context.polish) {
-        // Broadcast-style: a soft glow under a solid gold line.
+        // Broadcast-style: a soft glow under a solid yellow line.
         DrawRectangleRec(Rectangle{x - 0.35f, 0.0f, 0.7f, field::kWidth},
-                         Fade(theme::kAccent, 0.2f));
+                         Fade(theme::kFirstDownYellow, 0.2f));
     }
-    DrawLineEx(Vector2{x, 0.0f}, Vector2{x, field::kWidth}, 0.22f, Fade(theme::kAccent, 0.9f));
+    DrawLineEx(Vector2{x, 0.0f}, Vector2{x, field::kWidth}, 0.22f,
+               Fade(theme::kFirstDownYellow, 0.9f));
 }
 
 void drawRoutes(const World& world, const RenderContext& context, float opacity) {
@@ -206,13 +210,21 @@ void drawRoutes(const World& world, const RenderContext& context, float opacity)
     if (opacity <= 0.0f) {
         return;
     }
-    const Color color = Fade(theme::kAccent, 0.7f * opacity);
+    // White at ~85% with a thin dark outline so routes read on bright grass. (Yellow is
+    // reserved for the first-down line.) The outline is drawn first, so a translucent white on
+    // top would let it show through and turn the route grey. Instead the route uses the opaque
+    // color that 85% white over the grass produces: it looks the same on the field.
+    const Color whiteOnGrass =
+        ColorAlphaBlend(theme::kGrassLight, Fade(theme::kLineWhite, 0.85f), WHITE);
+    const Color color = Fade(whiteOnGrass, opacity);
+    const Color outline = theme::shadow(0.55f * opacity);
     for (const Player& player : world.players()) {
         if (player.route.empty()) {
             continue;
         }
         if (context.polish) {
-            drawCurvedRoute(player, color);
+            drawCurvedRoute(player, outline, 0.04f);
+            drawCurvedRoute(player, color, 0.0f);
         } else {
             drawStraightRoute(player, color);
         }
@@ -237,7 +249,7 @@ void drawBall(const World& world, const RenderContext& context) {
     const Ball& ball = world.ball();
     const Vec2 ground = lerp(ball.previousPosition, ball.position, context.alpha);
     if (ball.state == BallState::Held) {
-        return; // the gold carrier ring shows who has it
+        return; // the carrier ring shows who has it
     }
     const Texture2D* sprite = context.polish ? context.assets.ballSprite() : nullptr;
     if (ball.state != BallState::InAir) {
@@ -314,7 +326,7 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool sho
                                 center.y - (player.attributes.radius + 0.7f) * pixelsPerYard};
             DrawCircleV(badge, 9.0f, theme::panel(0.85f));
             std::snprintf(buffer, sizeof(buffer), "%d", player.receiverNumber + 1);
-            drawCenteredText(buffer, badge, 14, theme::kAccent);
+            drawCenteredText(buffer, badge, 14, theme::kLineWhite);
         }
 
         if (showStates) {

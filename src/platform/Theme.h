@@ -15,8 +15,9 @@ inline constexpr Color kAway{232, 106, 23, 255};       // defense: sprite jersey
 inline constexpr Color kGrassLight{49, 217, 120, 255}; // the two stripes of the grass tile
 inline constexpr Color kGrassDark{46, 204, 113, 255};
 inline constexpr Color kLineWhite{242, 242, 236, 255};
-inline constexpr Color kAccent{255, 214, 10, 255}; // yellow: ball carrier, routes, first down
-inline constexpr Color kUiDark{18, 22, 30, 255};   // panels, shadows
+// Yellow is reserved for the first-down line, the way broadcasts use it. Nothing else may use it.
+inline constexpr Color kFirstDownYellow{255, 214, 10, 255};
+inline constexpr Color kUiDark{18, 22, 30, 255}; // panels, shadows
 
 // --- Team identity (fictional) ---
 inline constexpr const char* kHomeName = "COMETS";

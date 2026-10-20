@@ -203,7 +203,7 @@ void drawScorebug(const Game& game, const RenderContext& context, int playClockS
 
     char text[24];
     formatDownAndDistance(game, text, sizeof(text));
-    drawBoxText(font, text, Rectangle{x, y, kDownWidth, kHeight}, 30.0f, 0.5f, theme::kAccent);
+    drawBoxText(font, text, Rectangle{x, y, kDownWidth, kHeight}, 30.0f, 0.5f, theme::kLineWhite);
     x += kDownWidth;
 
     formatBallOn(game.world().lineOfScrimmageX(), text, sizeof(text));
@@ -220,8 +220,8 @@ void drawScorebug(const Game& game, const RenderContext& context, int playClockS
     const Color clockColor = playClockSeconds <= 5 ? theme::kAway : theme::kLineWhite;
     drawBoxText(font, text, Rectangle{x, y, kClockWidth, kHeight}, 30.0f, 0.5f, clockColor);
 
-    // Thin accent rule across the top edge, a common broadcast detail.
-    DrawRectangleRec(Rectangle{x0, y - 3.0f, kTotalWidth, 3.0f}, theme::kAccent);
+    // Thin rule across the top edge, a common broadcast detail.
+    DrawRectangleRec(Rectangle{x0, y - 3.0f, kTotalWidth, 3.0f}, theme::kLineWhite);
 }
 
 void drawPlayCallTag(const Game& game, const RenderContext& context) {
@@ -233,7 +233,7 @@ void drawPlayCallTag(const Game& game, const RenderContext& context) {
     const Vector2 measured = MeasureTextEx(font, buffer, size, 1.0f);
     const float x = topBarCenterX() - measured.x / 2.0f;
     DrawRectangleRec(Rectangle{x - 14.0f, 10.0f, measured.x + 28.0f, 36.0f}, theme::panel(0.75f));
-    DrawRectangleRec(Rectangle{x - 14.0f, 10.0f, 4.0f, 36.0f}, theme::kAccent);
+    DrawRectangleRec(Rectangle{x - 14.0f, 10.0f, 4.0f, 36.0f}, theme::kHome);
     DrawTextEx(font, buffer, Vector2{x, 10.0f + (36.0f - measured.y) / 2.0f}, size, 1.0f,
                theme::kLineWhite);
 }

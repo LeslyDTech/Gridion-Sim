@@ -38,7 +38,7 @@ void DebugOverlay::drawGrid(const SpatialHash& grid) const {
                 const float alpha = count == 1 ? 0.15f : 0.35f;
                 DrawRectangleRec(Rectangle{origin.x + cell * static_cast<float>(c),
                                            origin.y + cell * static_cast<float>(r), cell, cell},
-                                 Fade(theme::kAccent, alpha));
+                                 Fade(theme::kLineWhite, alpha));
             }
         }
     }

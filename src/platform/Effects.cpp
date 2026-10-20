@@ -59,7 +59,7 @@ void formatPopup(const PlayOutcome& outcome, char* buffer, std::size_t size) {
 Color popupColor(const PlayOutcome& outcome) {
     switch (outcome.result) {
     case PlayResult::Touchdown:
-        return theme::kAccent;
+        return theme::kLineWhite;
     case PlayResult::Incomplete:
         return theme::kLineWhite;
     case PlayResult::Safety:
@@ -69,7 +69,7 @@ Color popupColor(const PlayOutcome& outcome) {
     case PlayResult::None:
         break;
     }
-    return outcome.yardsGained >= 0.0f ? theme::kAccent : theme::kAway;
+    return outcome.yardsGained >= 0.0f ? theme::kLineWhite : theme::kAway; // losses in orange
 }
 
 } // namespace
