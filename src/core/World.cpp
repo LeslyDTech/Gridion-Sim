@@ -130,7 +130,10 @@ void World::step(const InputCommands& input, float dt) {
         }
         movePlayers(input, dt);
         resolveCollisions();
-        updateBall(dt);
+        if (m_phase == PlayPhase::Live) { // a tackle during collisions ends the play
+            updateBall(dt);
+            checkBallCarrierPosition();
+        }
         break;
     case PlayPhase::Over:
         movePlayers(InputCommands{}, dt); // everyone coasts to a stop
@@ -154,10 +157,36 @@ void World::resolveCollisions() {
         Player& b = playerById(idB);
         const std::optional<Contact> contact =
             findContact({a.position, a.attributes.radius}, {b.position, b.attributes.radius});
-        if (contact) {
-            separate(a, b, *contact);
+        if (!contact) {
+            continue;
+        }
+        separate(a, b, *contact);
+        if (m_phase == PlayPhase::Live && (isTackle(a, b) || isTackle(b, a))) {
+            Player& carrier = a.state == PlayerState::BallCarrier ? a : b;
+            carrier.handle(PlayerEvent::Tackled);
+            endPlay(PlayResult::Tackled, carrier.position);
         }
     }
+}
+
+void World::checkBallCarrierPosition() {
+    if (m_ball.state != BallState::Held) {
+        return;
+    }
+    const Vec2 position = playerById(m_ball.carrierId).position;
+    if (field::isInOpponentEndZone(position) && field::isInBounds(position)) {
+        endPlay(PlayResult::Touchdown, {field::kOpponentGoalLine, position.y});
+    } else if (!field::isInBounds(position)) {
+        // The ball is dead where the carrier crossed the sideline.
+        const Vec2 crossing{std::clamp(position.x, 0.0f, field::kLength),
+                            std::clamp(position.y, 0.0f, field::kWidth)};
+        endPlay(PlayResult::OutOfBounds, crossing);
+    }
+}
+
+bool World::isTackle(const Player& carrier, const Player& defender) {
+    return carrier.state == PlayerState::BallCarrier && defender.team == Team::Defense &&
+           (defender.state == PlayerState::Pursuing || defender.state == PlayerState::Covering);
 }
 
 void World::separate(Player& a, Player& b, const Contact& contact) {
@@ -283,8 +312,16 @@ void World::resolvePassArrival() {
 }
 
 void World::endPlay(PlayResult result, Vec2 spot) {
+    // Downed (or out of bounds) in your own end zone is a safety.
+    if ((result == PlayResult::Tackled || result == PlayResult::OutOfBounds) &&
+        field::isInOwnEndZone(spot)) {
+        result = PlayResult::Safety;
+    }
     m_phase = PlayPhase::Over;
     m_ball.state = BallState::Dead;
+    if (result != PlayResult::Incomplete) {
+        m_ball.position = spot; // an incomplete pass stays where it fell
+    }
     m_outcome.result = result;
     m_outcome.spot = spot;
     m_outcome.yardsGained = result == PlayResult::Incomplete ? 0.0f : spot.x - m_lineOfScrimmageX;

@@ -62,6 +62,8 @@ private:
     void updateBall(float dt);
     void resolveCollisions();
     void separate(Player& a, Player& b, const Contact& contact);
+    void checkBallCarrierPosition(); // touchdown / out of bounds
+    static bool isTackle(const Player& carrier, const Player& defender);
     void resolvePassArrival();
     void endPlay(PlayResult result, Vec2 spot);
     void broadcast(PlayerEvent event, int exceptId);

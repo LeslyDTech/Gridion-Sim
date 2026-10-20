@@ -6,6 +6,7 @@ add_executable(gridiron_tests
     test_player_state.cpp
     test_route.cpp
     test_spatial_hash.cpp
+    test_world.cpp
 )
 
 target_link_libraries(gridiron_tests PRIVATE gridiron_core Catch2::Catch2WithMain)
