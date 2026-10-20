@@ -249,7 +249,8 @@ int hudBottomInset(bool polish) {
     return kHelpBarHeight + (polish ? kScorebugMargin + static_cast<int>(kScorebugHeight) : 0);
 }
 
-void drawHud(const Game& game, const RenderContext& context, int playClockSeconds) {
+void drawHud(const Game& game, const RenderContext& context) {
+    const int playClockSeconds = game.playClockSeconds();
     const World& world = game.world();
     if (context.polish) {
         drawPlayCallTag(game, context);

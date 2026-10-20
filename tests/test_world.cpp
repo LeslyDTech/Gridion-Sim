@@ -24,7 +24,7 @@ PlayDefinition loadData(const std::string& relativePath) {
 // Snaps, then runs straight downfield until the play ends (or a 20-second safety limit).
 World runDive(int maxSteps = 60 * 20) {
     World world;
-    world.setup(loadData("plays/hb_dive.json"), loadData("defense/base_cover1.json"),
+    world.setup(loadData("plays/03_hb_dive.json"), loadData("defense/base_cover1.json"),
                 {field::kStartingLineOfScrimmageX, field::kCenterY});
     InputCommands snap;
     snap.snap = true;
@@ -42,7 +42,8 @@ World runDive(int maxSteps = 60 * 20) {
 
 TEST_CASE("Setup lines up 22 players and spots the ball", "[world]") {
     World world;
-    world.setup(loadData("plays/slant.json"), loadData("defense/base_cover1.json"), {35.0f, 26.0f});
+    world.setup(loadData("plays/01_slant.json"), loadData("defense/base_cover1.json"),
+                {35.0f, 26.0f});
 
     CHECK(world.players().size() == 22);
     CHECK(world.phase() == PlayPhase::PreSnap);
@@ -70,7 +71,7 @@ TEST_CASE("The simulation is deterministic", "[world]") {
 
 TEST_CASE("Running out of bounds ends the play at the sideline", "[world]") {
     World world;
-    world.setup(loadData("plays/hb_dive.json"), loadData("defense/base_cover1.json"),
+    world.setup(loadData("plays/03_hb_dive.json"), loadData("defense/base_cover1.json"),
                 {field::kStartingLineOfScrimmageX, field::kCenterY});
     InputCommands snap;
     snap.snap = true;

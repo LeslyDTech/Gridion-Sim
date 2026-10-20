@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <utility>
 
 namespace gridiron {
@@ -43,13 +44,24 @@ Game::Game(std::vector<PlayDefinition> playbook, PlayDefinition defense)
 void Game::step(const InputCommands& input, float dt) {
     m_playJustStarted = false;
 
-    if (m_world.phase() == PlayPhase::PreSnap && input.nextPlay) {
-        m_playIndex = (m_playIndex + 1) % m_playbook.size();
-        setupPlay();
-        return;
+    if (m_world.phase() == PlayPhase::PreSnap) {
+        if (input.selectPlay >= 0 &&
+            static_cast<std::size_t>(input.selectPlay) < m_playbook.size()) {
+            selectPlay(static_cast<std::size_t>(input.selectPlay));
+            return;
+        }
+        if (input.nextPlay) {
+            selectPlay((m_playIndex + 1) % m_playbook.size());
+            return;
+        }
+        m_playClock = std::max(0.0f, m_playClock - dt);
     }
 
+    const PlayPhase before = m_world.phase();
     m_world.step(input, dt);
+    if (before == PlayPhase::Live && m_world.phase() == PlayPhase::Over) {
+        onPlayEnded();
+    }
 
     if (m_world.phase() == PlayPhase::Over) {
         m_resultTimer += dt;
@@ -61,21 +73,37 @@ void Game::step(const InputCommands& input, float dt) {
     }
 }
 
+int Game::playClockSeconds() const { return static_cast<int>(std::ceil(m_playClock)); }
+
 void Game::setupPlay() {
     m_world.setup(m_playbook[m_playIndex], m_defense, m_ballSpot);
     m_resultTimer = 0.0f;
     m_playJustStarted = true;
 }
 
-void Game::advanceToNextPlay() {
+void Game::selectPlay(std::size_t index) {
+    if (index == m_playIndex) {
+        return; // re-selecting the current play changes nothing (the clock keeps running)
+    }
+    m_playIndex = index;
+    setupPlay(); // re-line up in the new formation; the play clock is not reset
+}
+
+void Game::onPlayEnded() {
+    // Spot the ball and update down & distance right away, so the scorebug and the result
+    // popup reflect this play while it is still on screen.
     m_ballSpot = nextBallSpot(m_world.outcome(), m_ballSpot);
-    if (m_drive.recordPlay(m_world.outcome(), m_ballSpot.x) == DriveEvent::TurnoverOnDowns) {
+    m_lastDriveEvent = m_drive.recordPlay(m_world.outcome(), m_ballSpot.x);
+    if (m_lastDriveEvent == DriveEvent::TurnoverOnDowns) {
         // We only play offense, so a turnover simply starts a new drive.
         m_ballSpot = {Drive::kNewDriveLineX, field::kCenterY};
     }
-    m_playIndex = (m_playIndex + 1) % m_playbook.size();
+}
+
+void Game::advanceToNextPlay() {
     ++m_playsRun;
-    setupPlay();
+    m_playClock = kPlayClockSeconds;
+    setupPlay(); // same play stays selected
 }
 
 } // namespace gridiron

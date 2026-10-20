@@ -129,7 +129,7 @@ TEST_CASE("All shipped play files load without errors", "[loader][data]") {
         UNSCOPED_INFO(error);
     }
     CHECK(offense.errors.empty());
-    CHECK(offense.plays.size() == 3);
+    CHECK(offense.plays.size() == 4);
 
     const Playbook defense = loadPlaysFromDirectory(dataDir + "/defense");
     CHECK(defense.errors.empty());

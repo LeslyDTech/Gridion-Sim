@@ -18,6 +18,7 @@ struct InputCommands {
     bool snap = false;
     bool nextPlay = false;
     int throwTarget = -1; // receiver number (0-based) the user wants to throw to, -1 = none
+    int selectPlay = -1;  // playbook index (0-based) chosen before the snap, -1 = none
 
     static constexpr int kNoThrow = -1;
 };

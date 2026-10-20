@@ -10,6 +10,7 @@ namespace {
 
 constexpr int kGamepad = 0;
 constexpr float kStickDeadZone = 0.2f;
+constexpr int kPlayHotkeys = 4; // keys 1-4 pick a play pre-snap (the playbook panel has 4 rows)
 
 // Keys 1-5 select receivers 0-4.
 constexpr std::array<int, 5> kThrowKeys = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE};
@@ -65,7 +66,12 @@ void InputDevice::poll() {
     m_pending.nextPlay = m_pending.nextPlay || IsKeyPressed(KEY_TAB) ||
                          gamepadPressed(GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
     if (const int target = pressedThrowTarget(); target != InputCommands::kNoThrow) {
+        // The same number keys mean "throw to receiver N" after the snap and "select play N"
+        // before it; the simulation uses whichever applies to the current phase.
         m_pending.throwTarget = target;
+        if (target < kPlayHotkeys) {
+            m_pending.selectPlay = target;
+        }
     }
 
     m_app.toggleDebug = IsKeyPressed(KEY_F1) || gamepadPressed(GAMEPAD_BUTTON_MIDDLE_LEFT);
@@ -78,6 +84,7 @@ InputCommands InputDevice::consumeForStep() {
     m_pending.snap = false;
     m_pending.nextPlay = false;
     m_pending.throwTarget = InputCommands::kNoThrow;
+    m_pending.selectPlay = -1;
     return commands;
 }
 

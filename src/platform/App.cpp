@@ -161,7 +161,7 @@ void App::render(float alpha, float frameSeconds) {
     if (m_polish) {
         m_effects.drawResultPopup(context);
     }
-    render::drawHud(*m_game, context, m_effects.playClockSeconds());
+    render::drawHud(*m_game, context);
 
     const int players = static_cast<int>(world.players().size());
     m_stats.fps = GetFPS();
