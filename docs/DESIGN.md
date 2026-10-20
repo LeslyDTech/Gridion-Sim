@@ -138,6 +138,10 @@ effect is time-based, so it looks the same at any frame rate. F2 switches all of
 before/after comparisons. The camera centers the field in the area above the scorebug, so the
 HUD never hides a player.
 
+Art (Kenney Sports Pack, CC0) is loaded by `Assets` (RAII) and is optional: if a texture is
+missing, the renderer draws shapes instead. `Theme.h` was resampled from the sprites so the
+code-drawn elements and the art share one palette.
+
 ## 4. Key trade-offs
 
 | Decision | Alternative | Why |
