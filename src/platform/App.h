@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Assets.h"
 #include "DebugOverlay.h"
 #include "FollowCamera.h"
 #include "InputDevice.h"
@@ -35,13 +36,15 @@ private:
     void render(float alpha, float frameSeconds);
     void renderLoadError() const;
 
-    RaylibWindow m_window;
+    RaylibWindow m_window; // first: everything below needs the window
+    Assets m_assets;
     InputDevice m_input;
     FixedTimestep m_timestep;
     FollowCamera m_camera;
     DebugOverlay m_overlay;
     FrameStats m_stats;
     int m_fpsCapIndex = 0;
+    bool m_polish = true; // F2: all visual polish on/off, for before/after screenshots
 
     // Empty if the play files failed to load; the error is then shown on screen instead.
     std::optional<Game> m_game;

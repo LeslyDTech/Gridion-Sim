@@ -1,29 +1,24 @@
 #pragma once
 
+#include "RenderContext.h"
+
 namespace gridiron {
 
-class FollowCamera;
-class Game;
 class World;
 
-// Stateless drawing functions. Shapes are drawn in world units (yards) inside the camera's 2D
-// mode; text is drawn afterwards in screen space so it stays crisp at any zoom.
-//
-// `alpha` is the fixed-timestep interpolation factor: everything is drawn at
-// lerp(previousPosition, position, alpha).
+// Stateless drawing functions for everything on the field except the field itself
+// (FieldRenderer) and the HUD (Hud). Shapes are drawn in world units (yards) inside the
+// camera's 2D mode; labels are drawn afterwards in screen space so they stay crisp.
 namespace render {
 
 // --- World space (between BeginMode2D / EndMode2D) ---
-void drawFieldSurface();
-void drawLineOfScrimmage(const World& world);
-void drawRoutes(const World& world); // pre-snap route preview
-void drawPlayers(const World& world, float alpha);
-void drawBall(const World& world, float alpha);
+void drawLineOfScrimmage(const World& world, const RenderContext& context);
+void drawRoutes(const World& world, const RenderContext& context);
+void drawPlayers(const World& world, const RenderContext& context);
+void drawBall(const World& world, const RenderContext& context);
 
 // --- Screen space (after EndMode2D) ---
-void drawFieldNumbers(const FollowCamera& camera);
-void drawPlayerLabels(const World& world, float alpha, const FollowCamera& camera, bool showStates);
-void drawHud(const Game& game);
+void drawPlayerLabels(const World& world, const RenderContext& context, bool showStates);
 
 } // namespace render
 } // namespace gridiron

@@ -12,6 +12,7 @@ struct FrameStats {
     int stepsThisFrame = 0; // fixed steps run during the last rendered frame
     int collisionChecks = 0;
     int bruteForcePairs = 0; // what checking every pair would cost, for comparison
+    bool polish = true;      // visual polish on/off (F2)
 };
 
 // The always-on performance readout plus the F1 debug view (grid, collision counter, states).

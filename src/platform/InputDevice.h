@@ -4,9 +4,11 @@
 
 namespace gridiron {
 
-// App-level commands that never reach the simulation (debug view on F1, frame-rate cap on F3).
+// App-level commands that never reach the simulation: debug view (F1), visual polish on/off
+// for before/after comparisons (F2), frame-rate cap (F3).
 struct AppCommands {
     bool toggleDebug = false;
+    bool togglePolish = false;
     bool cycleFpsCap = false;
 };
 

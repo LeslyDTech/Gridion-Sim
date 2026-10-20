@@ -1,6 +1,9 @@
 #include "App.h"
 
+#include "FieldRenderer.h"
+#include "Hud.h"
 #include "Renderer.h"
+#include "Theme.h"
 #include "core/PlayLoader.h"
 
 #include <raylib.h>
@@ -23,9 +26,13 @@ constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
 // Exponential moving average: smooths the update-time readout so it is readable.
 double smooth(double average, double sample) { return average + (sample - average) * 0.05; }
 
-// data/ is copied next to the executable by the build (see src/platform/CMakeLists.txt).
+// data/ and assets/ are copied next to the executable by the build
+// (see src/platform/CMakeLists.txt).
 std::filesystem::path dataDirectory() {
     return std::filesystem::path(GetApplicationDirectory()) / "data";
+}
+std::filesystem::path assetDirectory() {
+    return std::filesystem::path(GetApplicationDirectory()) / "assets";
 }
 
 } // namespace
@@ -40,8 +47,8 @@ RaylibWindow::RaylibWindow(int width, int height, const char* title) {
 RaylibWindow::~RaylibWindow() { CloseWindow(); }
 
 App::App()
-    : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"), m_timestep(1.0 / kSimulationHz),
-      m_camera(kPixelsPerYard) {
+    : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"), m_assets(assetDirectory()),
+      m_timestep(1.0 / kSimulationHz), m_camera(kPixelsPerYard) {
     SetTargetFPS(kFpsCaps[0]);
     loadGame();
 }
@@ -101,6 +108,9 @@ void App::handleAppCommands() {
     if (commands.toggleDebug) {
         m_overlay.toggle();
     }
+    if (commands.togglePolish) {
+        m_polish = !m_polish;
+    }
     if (commands.cycleFpsCap) {
         m_fpsCapIndex = (m_fpsCapIndex + 1) % static_cast<int>(kFpsCaps.size());
         SetTargetFPS(kFpsCaps[m_fpsCapIndex]);
@@ -121,24 +131,27 @@ void App::render(float alpha, float frameSeconds) {
                     GetScreenWidth(), GetScreenHeight());
 
     BeginDrawing();
-    ClearBackground(BLACK);
+    ClearBackground(theme::kUiDark);
+
+    const RenderContext context{m_camera, m_assets, alpha, m_polish, GetTime()};
 
     BeginMode2D(m_camera.raylibCamera());
-    render::drawFieldSurface();
-    render::drawLineOfScrimmage(world);
+    render::drawField(context);
+    render::drawLineOfScrimmage(world, context);
     m_overlay.drawGrid(world.spatialHash());
-    render::drawRoutes(world);
-    render::drawPlayers(world, alpha);
-    render::drawBall(world, alpha);
+    render::drawRoutes(world, context);
+    render::drawPlayers(world, context);
+    render::drawBall(world, context);
     EndMode2D();
 
-    render::drawFieldNumbers(m_camera);
-    render::drawPlayerLabels(world, alpha, m_camera, m_overlay.enabled());
-    render::drawHud(*m_game);
+    render::drawVignette(context);
+    render::drawPlayerLabels(world, context, m_overlay.enabled());
+    render::drawHud(*m_game, context);
 
     const int players = static_cast<int>(world.players().size());
     m_stats.fps = GetFPS();
     m_stats.fpsCap = kFpsCaps[m_fpsCapIndex];
+    m_stats.polish = m_polish;
     m_stats.collisionChecks = world.collisionChecks();
     m_stats.bruteForcePairs = players * (players - 1) / 2;
     m_overlay.drawStats(m_stats);
@@ -147,9 +160,9 @@ void App::render(float alpha, float frameSeconds) {
 
 void App::renderLoadError() const {
     BeginDrawing();
-    ClearBackground(Color{40, 10, 10, 255});
-    DrawText("Failed to load play data", 40, 40, 32, RAYWHITE);
-    DrawText(m_loadError.c_str(), 40, 100, 20, LIGHTGRAY);
+    ClearBackground(theme::kUiDark);
+    DrawText("Failed to load play data", 40, 40, 32, theme::kAway);
+    DrawText(m_loadError.c_str(), 40, 100, 20, theme::kLineWhite);
     EndDrawing();
 }
 

@@ -1,5 +1,6 @@
 #include "DebugOverlay.h"
 
+#include "Theme.h"
 #include "core/SpatialHash.h"
 
 #include <raylib.h>
@@ -15,7 +16,7 @@ constexpr int kPadding = 8;
 
 // One line of text. A fixed char buffer avoids heap allocations every frame.
 void drawLine(int line, const char* text) {
-    DrawText(text, kPadding * 2, kPadding * 2 + line * kLineHeight, kFontSize, RAYWHITE);
+    DrawText(text, kPadding * 2, kPadding * 2 + line * kLineHeight, kFontSize, theme::kLineWhite);
 }
 
 } // namespace
@@ -37,12 +38,12 @@ void DebugOverlay::drawGrid(const SpatialHash& grid) const {
                 const float alpha = count == 1 ? 0.15f : 0.35f;
                 DrawRectangleRec(Rectangle{origin.x + cell * static_cast<float>(c),
                                            origin.y + cell * static_cast<float>(r), cell, cell},
-                                 Fade(ORANGE, alpha));
+                                 Fade(theme::kAccent, alpha));
             }
         }
     }
 
-    const Color lineColor = Fade(BLACK, 0.25f);
+    const Color lineColor = theme::shadow(0.3f);
     for (int c = 0; c <= grid.columns(); ++c) {
         const float x = origin.x + cell * static_cast<float>(c);
         DrawLineEx(Vector2{x, origin.y}, Vector2{x, origin.y + height}, 0.05f, lineColor);
@@ -55,7 +56,7 @@ void DebugOverlay::drawGrid(const SpatialHash& grid) const {
 
 void DebugOverlay::drawStats(const FrameStats& stats) const {
     const int lines = m_enabled ? 4 : 3;
-    DrawRectangle(kPadding, kPadding, 340, lines * kLineHeight + kPadding * 2, Fade(BLACK, 0.55f));
+    DrawRectangle(kPadding, kPadding, 400, lines * kLineHeight + kPadding * 2, theme::panel(0.6f));
 
     char buffer[96];
     if (stats.fpsCap > 0) {
@@ -68,8 +69,8 @@ void DebugOverlay::drawStats(const FrameStats& stats) const {
     std::snprintf(buffer, sizeof(buffer), "Update: %.3f ms @ 60 Hz", stats.updateMs);
     drawLine(1, buffer);
 
-    std::snprintf(buffer, sizeof(buffer), "Steps this frame: %d   Debug: %s (F1)",
-                  stats.stepsThisFrame, m_enabled ? "on" : "off");
+    std::snprintf(buffer, sizeof(buffer), "Steps: %d   Debug: %s (F1)   Polish: %s (F2)",
+                  stats.stepsThisFrame, m_enabled ? "on" : "off", stats.polish ? "on" : "off");
     drawLine(2, buffer);
 
     if (m_enabled) {
