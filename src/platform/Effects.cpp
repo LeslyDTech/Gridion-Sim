@@ -45,6 +45,7 @@ void Effects::update(const World& world, float frameSeconds) {
     m_trauma = std::max(0.0f, m_trauma - kTraumaDecayPerSecond * frameSeconds);
 
     updateFacing(world, frameSeconds);
+    updateStrides(world, frameSeconds);
     updateParticles(frameSeconds);
     updateZoom(world, frameSeconds);
 }
@@ -115,6 +116,33 @@ void Effects::updateFacing(const World& world, float frameSeconds) {
             facing = normalized(lerp(facing, normalized(player.velocity), t));
         }
     }
+}
+
+void Effects::updateStrides(const World& world, float frameSeconds) {
+    // Strides per second: a jog at low speed, a sprint near top speed. The phase is accumulated
+    // (not computed from time * rate), so changing speed never makes the animation jump.
+    constexpr float kMinStridesPerSecond = 1.6f;
+    constexpr float kMaxStridesPerSecond = 3.2f;
+    constexpr float kTwoPi = 6.2831853f;
+    for (const Player& player : world.players()) {
+        const auto index = static_cast<std::size_t>(player.id);
+        if (index >= m_strides.size()) {
+            continue;
+        }
+        Stride& stride = m_strides[index];
+        const float speed = length(player.velocity) / player.attributes.maxSpeed;
+        const float target = std::clamp(speed, 0.0f, 1.0f);
+        // Ease the intensity so starting and stopping blend in instead of popping.
+        stride.intensity += (target - stride.intensity) * smoothing(10.0f, frameSeconds);
+        const float rate =
+            kMinStridesPerSecond + (kMaxStridesPerSecond - kMinStridesPerSecond) * target;
+        stride.phase = std::fmod(stride.phase + kTwoPi * rate * frameSeconds, kTwoPi);
+    }
+}
+
+Effects::Stride Effects::stride(int playerId) const {
+    const auto index = static_cast<std::size_t>(playerId);
+    return index < m_strides.size() ? m_strides[index] : Stride{};
 }
 
 Vec2 Effects::facing(int playerId) const {

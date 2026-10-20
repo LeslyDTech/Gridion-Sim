@@ -101,8 +101,13 @@ void drawCarrierRing(Vector2 center, float radius, double time) {
              Fade(theme::kLineWhite, 0.9f));
 }
 
+// Running animation: a slight bob (the sprite grows a little at the top of each stride, as if
+// closer to the camera) and a shoulder sway, both scaled by how fast the player is moving.
+constexpr float kStrideBobScale = 0.05f;
+constexpr float kStrideSwayDegrees = 5.0f;
+
 void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
-                      const RenderContext& context) {
+                      Effects::Stride stride, const RenderContext& context) {
     const float radius = player.attributes.radius;
     const float shoulderWidth = spriteShoulderYards(player, context.camera.pixelsPerYard());
     const float yardsPerPixel = shoulderWidth / static_cast<float>(sprite.height);
@@ -115,7 +120,9 @@ void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 cen
     // A tackled player is drawn darker. (WHITE = the sprite's own colors, untinted.)
     const Color tint =
         player.state == PlayerState::Tackled ? ColorBrightness(WHITE, -0.35f) : WHITE;
-    drawSprite(sprite, center, yardsPerPixel, degrees(facing), tint);
+    const float bob = 1.0f + kStrideBobScale * stride.intensity * std::abs(std::sin(stride.phase));
+    const float sway = kStrideSwayDegrees * stride.intensity * std::sin(stride.phase);
+    drawSprite(sprite, center, yardsPerPixel * bob, degrees(facing) + sway, tint);
 }
 
 // --- Code-drawn shapes (fallback when the art is missing) -------------------------------------
@@ -413,7 +420,8 @@ void drawPlayers(const World& world, const RenderContext& context, const Effects
         const Vector2 center = toRaylib(interpolated(player, context.alpha));
         const Texture2D* sprite = spriteFor(player, context.assets);
         if (context.polish && sprite != nullptr) {
-            drawSpritePlayer(player, *sprite, center, effects.facing(player.id), context);
+            drawSpritePlayer(player, *sprite, center, effects.facing(player.id),
+                             effects.stride(player.id), context);
         } else if (context.polish) {
             drawPolishedPlayer(player, center, effects.facing(player.id), context);
         } else {

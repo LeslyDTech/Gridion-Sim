@@ -34,6 +34,14 @@ public:
     // Unit vector the player is facing (smoothed, so it doesn't flicker when they stop).
     Vec2 facing(int playerId) const;
 
+    // Running animation for one player: `phase` is the stride cycle in radians, `intensity` is
+    // 0 when standing and 1 at top speed.
+    struct Stride {
+        float phase = 0.0f;
+        float intensity = 0.0f;
+    };
+    Stride stride(int playerId) const;
+
     // Playbook overlay opacity: 1 before the snap, fading to 0 over half a second after it.
     float routeOpacity() const;
 
@@ -58,10 +66,12 @@ private:
     void onPlayEnded(const PlayOutcome& outcome);
     void spawnBurst(Vec2 at, int count, float speed);
     void updateFacing(const World& world, float frameSeconds);
+    void updateStrides(const World& world, float frameSeconds);
     void updateParticles(float frameSeconds);
     void updateZoom(const World& world, float frameSeconds);
 
     std::array<Vec2, kMaxPlayers> m_facing{};
+    std::array<Stride, kMaxPlayers> m_strides{};
     std::array<Particle, kParticlePoolSize> m_particles{};
     std::size_t m_nextParticle = 0;
     std::mt19937 m_random{20261020}; // fixed seed: effects look the same every run
