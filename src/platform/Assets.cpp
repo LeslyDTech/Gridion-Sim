@@ -5,6 +5,7 @@
 #include <cmath>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace gridiron {
 namespace {
@@ -19,16 +20,81 @@ constexpr int kShadowSize = 64;
 // Sprites are drawn rotated and scaled down (a 31 px sprite becomes ~20 px on screen), so they
 // use mipmaps + trilinear filtering. Point filtering keeps pixel art crisp only at integer scales
 // and would shimmer here.
+// Fully transparent pixels in PNGs are usually black. Filtering (bilinear, mipmaps) blends them
+// into visible edge pixels, which leaves a dark fringe around rotated or scaled sprites. This
+// copies each transparent pixel's color from its opaque neighbours, growing outward a few pixels,
+// while keeping alpha at 0 so nothing new becomes visible.
+void bleedColorIntoTransparentPixels(Image& image) {
+    ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    const int width = image.width;
+    const int height = image.height;
+    auto* pixels = static_cast<Color*>(image.data);
+    std::vector<unsigned char> filled(static_cast<std::size_t>(width * height));
+    for (int i = 0; i < width * height; ++i) {
+        filled[static_cast<std::size_t>(i)] = pixels[i].a > 0 ? 1 : 0;
+    }
+
+    constexpr int kPasses = 4; // enough for the deepest mip levels the sprites are drawn at
+    std::vector<unsigned char> next = filled;
+    for (int pass = 0; pass < kPasses; ++pass) {
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < width; ++x) {
+                const int index = y * width + x;
+                if (filled[static_cast<std::size_t>(index)] != 0) {
+                    continue;
+                }
+                int r = 0, g = 0, b = 0, count = 0;
+                for (int dy = -1; dy <= 1; ++dy) {
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        const int nx = x + dx;
+                        const int ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
+                            continue;
+                        }
+                        const int n = ny * width + nx;
+                        if (filled[static_cast<std::size_t>(n)] != 0) {
+                            r += pixels[n].r;
+                            g += pixels[n].g;
+                            b += pixels[n].b;
+                            ++count;
+                        }
+                    }
+                }
+                if (count > 0) {
+                    pixels[index] = Color{static_cast<unsigned char>(r / count),
+                                          static_cast<unsigned char>(g / count),
+                                          static_cast<unsigned char>(b / count), 0};
+                    next[static_cast<std::size_t>(index)] = 1;
+                }
+            }
+        }
+        filled = next;
+    }
+}
+
+// Loads a texture, or returns an empty one (id == 0) if the file is missing.
+//
+// Sprites are drawn rotated and scaled down (a 31 px sprite becomes ~20 px on screen), so they
+// use mipmaps + trilinear filtering. Point filtering keeps pixel art crisp only at integer scales
+// and would shimmer here. Wrapping is clamped: with the default (repeat), filtering at a sprite's
+// edge samples the opposite edge, which drew thin lines along rotated sprites.
 Texture2D loadTexture(const std::filesystem::path& path) {
     if (!std::filesystem::exists(path)) {
         TraceLog(LOG_WARNING, "Texture not found: %s (falling back to shapes)",
                  path.string().c_str());
         return Texture2D{};
     }
-    Texture2D texture = LoadTexture(path.string().c_str());
+    Image image = LoadImage(path.string().c_str());
+    if (image.data == nullptr) {
+        return Texture2D{};
+    }
+    bleedColorIntoTransparentPixels(image);
+    Texture2D texture = LoadTextureFromImage(image);
+    UnloadImage(image);
     if (texture.id != 0) {
         GenTextureMipmaps(&texture);
         SetTextureFilter(texture, TEXTURE_FILTER_TRILINEAR);
+        SetTextureWrap(texture, TEXTURE_WRAP_CLAMP);
     }
     return texture;
 }
