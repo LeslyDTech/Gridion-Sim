@@ -35,6 +35,7 @@ public:
     explicit FollowCamera(float visibleYardsAcross);
 
     void setSafeArea(SafeArea area) { m_safe = area; }
+    const SafeArea& safeArea() const { return m_safe; }
 
     // Jump straight to the framing (used when a new play is set up).
     void snapTo(Vec2 focus, Bounds players, int screenWidth, int screenHeight);

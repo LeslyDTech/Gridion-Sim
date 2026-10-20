@@ -283,10 +283,63 @@ bool showsBadge(const Player& player, const World& world) {
             player.state == PlayerState::Idle);
 }
 
-void drawReceiverBadges(const World& world, const RenderContext& context) {
+// Draws the badge disc with the receiver's number, centered on `at`.
+void drawBadge(const Player& player, Vector2 at, float radius, const RenderContext& context) {
     using theme::hud::Weight;
-    const float pixelsPerYard = context.camera.pixelsPerYard();
+    DrawCircleV(at, radius, theme::panel(0.85f));
     char number[4];
+    std::snprintf(number, sizeof(number), "%d", player.receiverNumber + 1);
+    if (context.polish) {
+        text::drawCentered(context.assets.hudFont(Weight::Bold, 17.0f), number, at, 17.0f,
+                           theme::kLineWhite);
+    } else {
+        drawCenteredText(number, at, 14, theme::kLineWhite);
+    }
+}
+
+// The HUD-free part of the screen, in pixels.
+Rectangle safeRectangle(const RenderContext& context) {
+    const SafeArea& safe = context.camera.safeArea();
+    return {safe.side, safe.top, static_cast<float>(GetScreenWidth()) - 2.0f * safe.side,
+            static_cast<float>(GetScreenHeight()) - safe.top - safe.bottom};
+}
+
+bool contains(Rectangle rect, Vector2 point) {
+    return point.x >= rect.x && point.x <= rect.x + rect.width && point.y >= rect.y &&
+           point.y <= rect.y + rect.height;
+}
+
+// Edge arrow for a receiver outside the safe area: a badge pinned to the safe area's edge on the
+// line from its center toward the receiver, with a triangle pointing the way.
+constexpr float kArrowBadgeRadius = 11.0f;
+constexpr float kArrowEdgeInset = 20.0f; // keeps badge + arrow fully inside the safe area
+
+void drawEdgeArrow(const Player& player, Vector2 target, Rectangle safe,
+                   const RenderContext& context) {
+    const Vector2 middle{safe.x + safe.width / 2.0f, safe.y + safe.height / 2.0f};
+    const Vec2 toTarget{target.x - middle.x, target.y - middle.y};
+    const float halfWidth = safe.width / 2.0f - kArrowEdgeInset;
+    const float halfHeight = safe.height / 2.0f - kArrowEdgeInset;
+    // Scale the direction so it just reaches the inset rectangle's edge.
+    const float tx = std::abs(toTarget.x) > 1e-3f ? halfWidth / std::abs(toTarget.x) : 1.0e9f;
+    const float ty = std::abs(toTarget.y) > 1e-3f ? halfHeight / std::abs(toTarget.y) : 1.0e9f;
+    const float t = std::min(tx, ty);
+    const Vector2 at{std::round(middle.x + toTarget.x * t), std::round(middle.y + toTarget.y * t)};
+
+    const Vec2 dir = normalized(toTarget);
+    const Vec2 side{-dir.y, dir.x};
+    const Vec2 base{at.x + dir.x * (kArrowBadgeRadius + 1.0f),
+                    at.y + dir.y * (kArrowBadgeRadius + 1.0f)};
+    const Vec2 tip = base + dir * 7.0f;
+    const Vec2 left = base + side * 6.0f;
+    const Vec2 right = base - side * 6.0f;
+    DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), Fade(theme::kLineWhite, 0.9f));
+    drawBadge(player, at, kArrowBadgeRadius, context);
+}
+
+void drawReceiverBadges(const World& world, const RenderContext& context) {
+    const float pixelsPerYard = context.camera.pixelsPerYard();
+    const Rectangle safe = safeRectangle(context);
     for (const Player& player : world.players()) {
         if (!showsBadge(player, world)) {
             continue;
@@ -298,14 +351,10 @@ void drawReceiverBadges(const World& world, const RenderContext& context) {
         const float diagonal =
             (spriteHalf * pixelsPerYard + kBadgeGapPixels) * 0.70710678f + kBadgeRadiusPixels;
         const Vector2 badge{std::round(center.x - diagonal), std::round(center.y - diagonal)};
-
-        DrawCircleV(badge, kBadgeRadiusPixels, theme::panel(0.85f));
-        std::snprintf(number, sizeof(number), "%d", player.receiverNumber + 1);
-        if (context.polish) {
-            text::drawCentered(context.assets.hudFont(Weight::Bold, 17.0f), number, badge, 17.0f,
-                               theme::kLineWhite);
+        if (contains(safe, center)) {
+            drawBadge(player, badge, kBadgeRadiusPixels, context);
         } else {
-            drawCenteredText(number, badge, 14, theme::kLineWhite);
+            drawEdgeArrow(player, center, safe, context); // off-screen or under the HUD
         }
     }
 }
