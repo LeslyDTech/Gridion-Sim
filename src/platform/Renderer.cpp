@@ -234,7 +234,10 @@ void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard,
     }
     const Font& font = context.assets.font();
     if (sprites) {
-        const float size = 0.5f * pixelsPerYard; // scales with the camera zoom
+        // Scales with the camera zoom, but never below a readable size when the camera pulls back
+        // to keep a wide formation in frame.
+        constexpr float kMinNumberPixels = 12.0f;
+        const float size = std::max(kMinNumberPixels, 0.5f * pixelsPerYard);
         const Vector2 below{center.x, center.y + (player.attributes.radius + 0.4f) * pixelsPerYard};
         text::drawCentered(font, number, Vector2{below.x + 1.5f, below.y + 1.5f}, size,
                            theme::shadow(0.8f));

@@ -15,7 +15,8 @@
 namespace gridiron::render {
 namespace {
 
-constexpr int kHelpBarHeight = 32; // plain mode (F2 off)
+constexpr int kHelpBarHeight = 32;          // plain mode (F2 off)
+constexpr float kPlainTopBarBottom = 40.0f; // plain top bar: y 8, height 32
 
 // ---------------------------------------------------------------- formatting (no allocations)
 
@@ -155,7 +156,14 @@ void drawResultBanner(const PlayOutcome& outcome) {
 
 } // namespace
 
-int hudBottomInset(bool polish) { return polish ? broadcast::bottomInset() : kHelpBarHeight; }
+SafeArea hudSafeArea(bool polish) {
+    constexpr float kGap = 8.0f; // breathing room between the HUD and the nearest player
+    if (polish) {
+        return {static_cast<float>(broadcast::topInset()) + kGap,
+                static_cast<float>(broadcast::bottomInset()) + kGap, kGap};
+    }
+    return {kPlainTopBarBottom + kGap, static_cast<float>(kHelpBarHeight) + kGap, kGap};
+}
 
 void drawHud(const Game& game, const RenderContext& context) {
     const int playClockSeconds = game.playClockSeconds();

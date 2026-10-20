@@ -8,6 +8,7 @@
 
 #include <raylib.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <filesystem>
@@ -32,6 +33,22 @@ std::filesystem::path assetDirectory() {
     return std::filesystem::path(GetApplicationDirectory()) / "assets";
 }
 
+// Room around each player that must stay out from under the HUD: half a sprite, the jersey number
+// below it and the receiver badge above it.
+constexpr float kPlayerFramingMargin = 1.5f; // yards
+
+// The box the camera must keep on screen: every player, where they are drawn this frame.
+Bounds playerBounds(const World& world, float alpha) {
+    Bounds bounds{{1.0e9f, 1.0e9f}, {-1.0e9f, -1.0e9f}};
+    for (const Player& player : world.players()) {
+        const Vec2 p = lerp(player.previousPosition, player.position, alpha);
+        bounds.min = {std::min(bounds.min.x, p.x), std::min(bounds.min.y, p.y)};
+        bounds.max = {std::max(bounds.max.x, p.x), std::max(bounds.max.y, p.y)};
+    }
+    const Vec2 margin{kPlayerFramingMargin, kPlayerFramingMargin};
+    return {bounds.min - margin, bounds.max + margin};
+}
+
 } // namespace
 
 RaylibWindow::RaylibWindow(int width, int height, const char* title) {
@@ -47,7 +64,7 @@ App::App()
     : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"), m_assets(assetDirectory()),
       m_timestep(1.0 / kSimulationHz), m_camera(kVisibleYardsAcross) {
     SetTargetFPS(kFpsCaps[0]);
-    applyCameraInset();
+    applyCameraSafeArea();
     loadGame();
 }
 
@@ -94,15 +111,16 @@ void App::runSimulationSteps(int steps) {
     for (int i = 0; i < steps; ++i) {
         m_game->step(m_input.consumeForStep(), dt);
         if (m_game->playJustStarted()) {
-            const Vec2 spot = m_game->world().ball().position;
-            m_camera.snapTo(spot, GetScreenWidth(), GetScreenHeight());
+            const World& world = m_game->world();
+            m_camera.snapTo(world.ball().position, playerBounds(world, 1.0f), GetScreenWidth(),
+                            GetScreenHeight());
         }
     }
     const std::chrono::duration<double> elapsed = Clock::now() - start;
     m_frame.updateSeconds = elapsed.count();
 }
 
-void App::applyCameraInset() { m_camera.setBottomInset(render::hudBottomInset(m_polish)); }
+void App::applyCameraSafeArea() { m_camera.setSafeArea(render::hudSafeArea(m_polish)); }
 
 void App::handleAppCommands() {
     const AppCommands& commands = m_input.appCommands();
@@ -111,7 +129,7 @@ void App::handleAppCommands() {
     }
     if (commands.togglePolish) {
         m_polish = !m_polish;
-        applyCameraInset();
+        applyCameraSafeArea();
     }
     if (commands.cycleFpsCap) {
         m_fpsCapIndex = (m_fpsCapIndex + 1) % static_cast<int>(kFpsCaps.size());
@@ -130,8 +148,9 @@ void App::render(float alpha, float frameSeconds) {
     // against the players.
     const Ball& ball = world.ball();
     m_effects.update(world, frameSeconds);
-    m_camera.follow(lerp(ball.previousPosition, ball.position, alpha), frameSeconds,
-                    GetScreenWidth(), GetScreenHeight(), m_polish ? m_effects.zoomFactor() : 1.0f,
+    m_camera.follow(lerp(ball.previousPosition, ball.position, alpha), playerBounds(world, alpha),
+                    frameSeconds, GetScreenWidth(), GetScreenHeight(),
+                    m_polish ? m_effects.zoomFactor() : 1.0f,
                     m_polish ? m_effects.shakeOffset() : Vec2{});
 
     BeginDrawing();

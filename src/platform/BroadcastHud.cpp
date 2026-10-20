@@ -459,6 +459,7 @@ void drawControlsBar(const World& world, const Assets& assets) {
     }
 }
 
+int topInset() { return static_cast<int>(kPlayCallBannerTop + kPlayCallBannerHeight); }
 int bottomInset() { return static_cast<int>(kScorebugBottom + kScorebugHeight); }
 
 } // namespace gridiron::render::broadcast

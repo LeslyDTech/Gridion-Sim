@@ -23,7 +23,9 @@ void drawYardsGainedPopup(const Game& game, const Assets& assets);
 void drawScorebug(const Game& game, const Assets& assets);
 void drawControlsBar(const World& world, const Assets& assets);
 
-// Pixels at the bottom of the screen covered by the scorebug and controls bar.
+// Pixels at the top of the screen covered by the banner, and at the bottom by the scorebug and
+// controls bar.
+int topInset();
 int bottomInset();
 
 } // namespace render::broadcast
