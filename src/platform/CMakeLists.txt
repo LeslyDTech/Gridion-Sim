@@ -1,6 +1,11 @@
-# gridiron: the playable executable. The only target that links raylib.
+﻿# gridiron: the playable executable. The only target that links raylib.
 add_executable(gridiron
     main.cpp
+    App.cpp
+    DebugOverlay.cpp
+    FollowCamera.cpp
+    InputDevice.cpp
+    Renderer.cpp
 )
 
 target_link_libraries(gridiron PRIVATE gridiron_core raylib)

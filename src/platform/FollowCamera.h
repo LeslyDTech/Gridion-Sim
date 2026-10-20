@@ -1,0 +1,36 @@
+#pragma once
+
+#include "core/Vec2.h"
+
+#include <raylib.h>
+
+namespace gridiron {
+
+// A 2D camera that smoothly follows a focus point (the ball) and never shows much beyond the
+// field. Wraps raylib's Camera2D so the renderer can draw directly in yards: inside
+// BeginMode2D(camera.raylibCamera()), one unit is one yard.
+class FollowCamera {
+public:
+    explicit FollowCamera(float pixelsPerYard);
+
+    // Jump straight to a point (used when a new play is set up).
+    void snapTo(Vec2 focus, int screenWidth, int screenHeight);
+
+    // Ease toward focus. Called once per rendered frame with the real frame time.
+    void follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight);
+
+    const Camera2D& raylibCamera() const { return m_camera; }
+
+    // World (yards) -> screen (pixels), for text drawn on top of the world.
+    Vector2 worldToScreen(Vec2 world) const;
+    float pixelsPerYard() const { return m_camera.zoom; }
+
+private:
+    Vec2 clampToField(Vec2 center, int screenWidth, int screenHeight) const;
+    void apply(Vec2 center, int screenWidth, int screenHeight);
+
+    Camera2D m_camera{};
+    Vec2 m_center;
+};
+
+} // namespace gridiron
