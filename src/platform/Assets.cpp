@@ -12,6 +12,7 @@ namespace {
 // Glyphs are rasterized once at this size; mipmaps keep them smooth when drawn smaller.
 constexpr int kFontAtlasSize = 96;
 constexpr int kVignetteSize = 256;
+constexpr int kShadowSize = 64;
 
 // Loads a texture, or returns an empty one (id == 0) if the file is missing.
 //
@@ -111,6 +112,14 @@ Assets::Assets(const std::filesystem::path& assetDirectory) : m_defaultFont(GetF
     UnloadImage(image);
     SetTextureFilter(m_vignette, TEXTURE_FILTER_BILINEAR);
 
+    // Player shadow, also generated: solid for the inner 30% of the radius, then a smooth falloff
+    // to transparent, which gives the soft edge.
+    Image shadow = GenImageGradientRadial(kShadowSize, kShadowSize, 0.3f, theme::kUiDark,
+                                          Fade(theme::kUiDark, 0.0f));
+    m_softShadow = LoadTextureFromImage(shadow);
+    UnloadImage(shadow);
+    SetTextureFilter(m_softShadow, TEXTURE_FILTER_BILINEAR);
+
     // Kenney Sports Pack (CC0): blue jerseys for the offense, orange for the defense.
     const std::filesystem::path players = assetDirectory / "sprites" / "players";
     for (int i = 0; i < kSkinTones; ++i) {
@@ -169,6 +178,7 @@ Assets::~Assets() {
     if (m_hasDebugFont) {
         UnloadFont(m_debugFont);
     }
+    UnloadTexture(m_softShadow);
     UnloadTexture(m_vignette);
     if (m_hasCustomFont) {
         UnloadFont(m_font); // the default font belongs to raylib

@@ -42,6 +42,9 @@ public:
     // Transparent in the middle, dark at the edges; stretched over the whole screen.
     const Texture2D& vignette() const { return m_vignette; }
 
+    // Soft round shadow: dark in the middle, fading to fully transparent at the edge.
+    const Texture2D& softShadow() const { return m_softShadow; }
+
     // Top-down player sprite, facing +x. `variant` picks one of kSkinTones skin tones.
     const Texture2D* playerSprite(Team team, int variant) const;
     const Texture2D* ballSprite() const { return valid(m_ball); }
@@ -59,6 +62,7 @@ private:
     Font m_debugFont{};
     bool m_hasDebugFont = false;
     Texture2D m_vignette{};
+    Texture2D m_softShadow{};
 
     struct HudFont {
         theme::hud::Weight weight;

@@ -48,6 +48,24 @@ constexpr float kSpriteShoulderToRadius = 2.6f;
 constexpr float kBallSpriteAxisDegrees = 54.7f;
 constexpr float kBallYardsPerPixel = 0.05f; // 14 x 16 px -> 0.7 x 0.8 yards
 
+// Player shadows: a soft round shadow 70% of the sprite's size at 25% opacity, offset 2.5 px
+// down-right as if lit from the top-left. The offset is in screen pixels, so it looks the same at
+// every camera zoom.
+constexpr float kShadowSizeOfSprite = 0.7f;
+constexpr float kShadowOpacity = 0.25f;
+constexpr float kShadowOffsetPixels = 2.5f;
+
+void drawSoftShadow(const RenderContext& context, Vector2 center, float spriteSize) {
+    const Texture2D& texture = context.assets.softShadow();
+    const float size = spriteSize * kShadowSizeOfSprite;
+    const float offset = kShadowOffsetPixels / context.camera.pixelsPerYard();
+    DrawTexturePro(texture,
+                   Rectangle{0.0f, 0.0f, static_cast<float>(texture.width),
+                             static_cast<float>(texture.height)},
+                   Rectangle{center.x + offset, center.y + offset, size, size},
+                   Vector2{size / 2.0f, size / 2.0f}, 0.0f, Fade(WHITE, kShadowOpacity));
+}
+
 float degrees(Vec2 direction) { return std::atan2(direction.y, direction.x) * RAD2DEG; }
 
 // Draws `texture` centered on `center`, `yardsPerPixel` scale, rotated clockwise by `angle`.
@@ -74,15 +92,14 @@ void drawCarrierRing(Vector2 center, float radius, double time) {
 }
 
 void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
-                      double time) {
+                      const RenderContext& context) {
     const float radius = player.attributes.radius;
-    const float yardsPerPixel =
-        kSpriteShoulderToRadius * radius / static_cast<float>(sprite.height);
+    const float shoulderWidth = kSpriteShoulderToRadius * radius; // the sprite's long side
+    const float yardsPerPixel = shoulderWidth / static_cast<float>(sprite.height);
 
-    // Soft drop shadow, offset down-right as if lit from the top-left.
-    DrawCircleV(Vector2{center.x + 0.12f, center.y + 0.2f}, radius * 1.1f, theme::shadow(0.4f));
+    drawSoftShadow(context, center, shoulderWidth);
     if (player.state == PlayerState::BallCarrier) {
-        drawCarrierRing(center, radius, time);
+        drawCarrierRing(center, radius, context.time);
     }
     // A tackled player is drawn darker. (WHITE = the sprite's own colors, untinted.)
     const Color tint =
@@ -92,12 +109,13 @@ void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 cen
 
 // --- Code-drawn shapes (fallback when the art is missing) -------------------------------------
 
-void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing, double time) {
+void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing,
+                        const RenderContext& context) {
     const float radius = player.attributes.radius;
+    const double time = context.time;
     constexpr int kSegments = 32;
 
-    // Soft drop shadow, offset down-right as if lit from the top-left.
-    DrawCircleV(Vector2{center.x + 0.12f, center.y + 0.2f}, radius * 1.05f, theme::shadow(0.4f));
+    drawSoftShadow(context, center, 2.0f * radius);
 
     if (player.state == PlayerState::BallCarrier) {
         const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
@@ -288,9 +306,9 @@ void drawPlayers(const World& world, const RenderContext& context, const Effects
         const Vector2 center = toRaylib(interpolated(player, context.alpha));
         const Texture2D* sprite = spriteFor(player, context.assets);
         if (context.polish && sprite != nullptr) {
-            drawSpritePlayer(player, *sprite, center, effects.facing(player.id), context.time);
+            drawSpritePlayer(player, *sprite, center, effects.facing(player.id), context);
         } else if (context.polish) {
-            drawPolishedPlayer(player, center, effects.facing(player.id), context.time);
+            drawPolishedPlayer(player, center, effects.facing(player.id), context);
         } else {
             drawPlainPlayer(player, center);
         }
