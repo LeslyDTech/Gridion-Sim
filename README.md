@@ -60,6 +60,8 @@ ctest --test-dir build --output-on-failure
 | Debug view (off by default): stats, grid, player states | F1 | Back / View |
 | Visual polish on/off (before/after comparison) | F2 | – |
 | Cycle the render FPS cap (144 / 60 / 30 / 240 / uncapped) | F3 | – |
+| Camera zoom in / out (0.5x–3x) | Mouse wheel | – |
+| Back to the automatic camera | Middle mouse button | – |
 
 Receivers show their throw button in a gold badge. Before the snap every route is drawn on the
 field, and the overlay fades out after the snap.

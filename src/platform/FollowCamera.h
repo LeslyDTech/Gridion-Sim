@@ -46,6 +46,13 @@ public:
     void follow(Vec2 focus, Bounds players, float frameSeconds, int screenWidth, int screenHeight,
                 float zoomFactor = 1.0f, Vec2 shake = {});
 
+    // The user's mouse-wheel zoom, multiplied onto the automatic framing (1 = automatic).
+    // Below 1 shows more field and every framing rule still holds. Above 1 deliberately zooms in
+    // closer than the framing allows: players can leave the screen, and the view stays inside
+    // the framed box, as close to the ball as it can.
+    void setUserZoom(float zoom) { m_userZoom = zoom; }
+    float userZoom() const { return m_userZoom; }
+
     const Camera2D& raylibCamera() const { return m_camera; }
 
     // World (yards) -> screen (pixels), for text drawn on top of the world.
@@ -66,6 +73,7 @@ private:
     Camera2D m_camera{};
     float m_visibleYardsAcross;
     SafeArea m_safe;
+    float m_userZoom = 1.0f;
     Vec2 m_center;
 };
 

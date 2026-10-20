@@ -5,11 +5,13 @@
 namespace gridiron {
 
 // App-level commands that never reach the simulation: debug view (F1), visual polish on/off
-// for before/after comparisons (F2), frame-rate cap (F3).
+// for before/after comparisons (F2), frame-rate cap (F3), camera zoom (mouse wheel).
 struct AppCommands {
     bool toggleDebug = false;
     bool togglePolish = false;
     bool cycleFpsCap = false;
+    float zoomNotches = 0.0f; // mouse wheel this frame: > 0 zoom in, < 0 zoom out
+    bool resetZoom = false;   // middle mouse button: back to the automatic camera
 };
 
 // The single input abstraction: merges keyboard and the first gamepad into device-independent

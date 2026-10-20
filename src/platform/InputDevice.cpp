@@ -77,6 +77,8 @@ void InputDevice::poll() {
     m_app.toggleDebug = IsKeyPressed(KEY_F1) || gamepadPressed(GAMEPAD_BUTTON_MIDDLE_LEFT);
     m_app.togglePolish = IsKeyPressed(KEY_F2);
     m_app.cycleFpsCap = IsKeyPressed(KEY_F3);
+    m_app.zoomNotches = GetMouseWheelMove();
+    m_app.resetZoom = IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE);
 }
 
 InputCommands InputDevice::consumeForStep() {

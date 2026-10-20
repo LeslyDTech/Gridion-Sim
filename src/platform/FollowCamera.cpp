@@ -20,10 +20,12 @@ constexpr float kZoomSharpness = 4.0f;
 
 float smoothing(float sharpness, float seconds) { return 1.0f - std::exp(-sharpness * seconds); }
 
-// Keep `center` within [lo, hi]; if the range is inverted (the box is bigger than the view, which
-// fitZoom prevents up to rounding), center on the box instead.
-float clampOrCenter(float center, float lo, float hi) {
-    return lo > hi ? (lo + hi) / 2.0f : std::clamp(center, lo, hi);
+// Keep `center` within [lo, hi]: the range of centers for which the whole box is in view. If the
+// box is bigger than the view (only when the user has zoomed in past the framing), the range is
+// inverted: [hi, lo] is then the range that keeps the view inside the box, and the center is
+// clamped to that instead, so it stays as close to the ball as possible.
+float clampCenter(float center, float lo, float hi) {
+    return lo > hi ? std::clamp(center, hi, lo) : std::clamp(center, lo, hi);
 }
 
 // Clamp one axis so the view stays within [-margin, fieldSize + margin]. If the view is wider
@@ -55,8 +57,8 @@ Vec2 FollowCamera::constrainCenter(Vec2 center, Bounds players, View view) const
     const float halfX = view.width / (2.0f * m_camera.zoom);
     const float halfY = view.height / (2.0f * m_camera.zoom);
     // Keep every player inside the view...
-    Vec2 constrained{clampOrCenter(center.x, players.max.x - halfX, players.min.x + halfX),
-                     clampOrCenter(center.y, players.max.y - halfY, players.min.y + halfY)};
+    Vec2 constrained{clampCenter(center.x, players.max.x - halfX, players.min.x + halfX),
+                     clampCenter(center.y, players.max.y - halfY, players.min.y + halfY)};
     // ...and never show past the back of the end zones (or far beyond the sidelines).
     constrained.x = clampToField(constrained.x, halfX, field::kLength, kMarginX);
     constrained.y = clampToField(constrained.y, halfY, field::kWidth, kMarginY);
@@ -66,7 +68,7 @@ Vec2 FollowCamera::constrainCenter(Vec2 center, Bounds players, View view) const
 void FollowCamera::snapTo(Vec2 focus, Bounds players, int screenWidth, int screenHeight) {
     const View view = safeView(screenWidth, screenHeight);
     const float closest = static_cast<float>(screenWidth) / m_visibleYardsAcross;
-    m_camera.zoom = std::min(closest, fitZoom(players, view));
+    m_camera.zoom = std::min(closest, fitZoom(players, view)) * m_userZoom;
     m_center = constrainCenter(focus, players, view);
     apply({}, screenWidth, view);
 }
@@ -77,10 +79,11 @@ void FollowCamera::follow(Vec2 focus, Bounds players, float frameSeconds, int sc
     const float closest = static_cast<float>(screenWidth) / m_visibleYardsAcross * zoomFactor;
     const float fit = fitZoom(players, view);
 
-    // Smooth zoom changes, but never zoom in further than "everyone fits" allows (hard limit).
-    const float targetZoom = std::min(closest, fit);
+    // Smooth zoom changes, but never zoom in further than "everyone fits" allows (hard limit) --
+    // unless the user has zoomed in on purpose, which scales both the target and the limit.
+    const float targetZoom = std::min(closest, fit) * m_userZoom;
     m_camera.zoom += (targetZoom - m_camera.zoom) * smoothing(kZoomSharpness, frameSeconds);
-    m_camera.zoom = std::min(m_camera.zoom, fit);
+    m_camera.zoom = std::min(m_camera.zoom, fit * std::max(m_userZoom, 1.0f));
 
     // Smooth the pan toward the ball, then enforce the framing rules (hard limits again).
     const Vec2 target = constrainCenter(focus, players, view);

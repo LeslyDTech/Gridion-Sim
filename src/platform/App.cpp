@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <filesystem>
 
 namespace gridiron {
@@ -171,6 +172,17 @@ void App::handleAppCommands() {
     if (commands.togglePolish) {
         m_polish = !m_polish;
         applyCameraSafeArea();
+    }
+    if (commands.zoomNotches != 0.0f) {
+        // ~15% per wheel notch, multiplicative so zooming feels even at any level.
+        constexpr float kZoomPerNotch = 1.15f;
+        constexpr float kMinUserZoom = 0.5f;
+        constexpr float kMaxUserZoom = 3.0f;
+        const float zoom = m_camera.userZoom() * std::pow(kZoomPerNotch, commands.zoomNotches);
+        m_camera.setUserZoom(std::clamp(zoom, kMinUserZoom, kMaxUserZoom));
+    }
+    if (commands.resetZoom) {
+        m_camera.setUserZoom(1.0f);
     }
     if (commands.cycleFpsCap) {
         m_fpsCapIndex = (m_fpsCapIndex + 1) % static_cast<int>(kFpsCaps.size());
