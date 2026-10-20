@@ -51,8 +51,8 @@ Vec2 FollowCamera::clampToField(Vec2 center, int screenWidth, int screenHeight) 
 void FollowCamera::apply(Vec2 center, int screenWidth, int screenHeight) {
     m_center = center;
     m_camera.target = Vector2{center.x, center.y};
-    m_camera.offset = Vector2{static_cast<float>(screenWidth) / 2.0f,
-                              static_cast<float>(screenHeight) / 2.0f};
+    m_camera.offset =
+        Vector2{static_cast<float>(screenWidth) / 2.0f, static_cast<float>(screenHeight) / 2.0f};
 }
 
 } // namespace gridiron

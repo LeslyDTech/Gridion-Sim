@@ -50,7 +50,7 @@ private:
     int m_columns;
     int m_rows;
     std::vector<std::vector<int>> m_cells; // player ids per cell
-    std::vector<int> m_occupiedCells;      // indices of non-empty cells, so clear/query skip empties
+    std::vector<int> m_occupiedCells; // indices of non-empty cells, so clear/query skip empties
 };
 
 } // namespace gridiron

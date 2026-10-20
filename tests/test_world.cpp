@@ -58,8 +58,7 @@ TEST_CASE("A run up the middle ends in a tackle with yards counted from the line
     const World world = runDive();
     REQUIRE(world.phase() == PlayPhase::Over);
     CHECK(world.outcome().result == PlayResult::Tackled);
-    CHECK(world.outcome().yardsGained ==
-          world.outcome().spot.x - field::kStartingLineOfScrimmageX);
+    CHECK(world.outcome().yardsGained == world.outcome().spot.x - field::kStartingLineOfScrimmageX);
 }
 
 TEST_CASE("The simulation is deterministic", "[world]") {

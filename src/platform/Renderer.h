@@ -22,8 +22,7 @@ void drawBall(const World& world, float alpha);
 
 // --- Screen space (after EndMode2D) ---
 void drawFieldNumbers(const FollowCamera& camera);
-void drawPlayerLabels(const World& world, float alpha, const FollowCamera& camera,
-                      bool showStates);
+void drawPlayerLabels(const World& world, float alpha, const FollowCamera& camera, bool showStates);
 void drawHud(const Game& game);
 
 } // namespace render

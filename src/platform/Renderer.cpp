@@ -240,8 +240,8 @@ void drawFieldNumbers(const FollowCamera& camera) {
 void drawPlayerLabels(const World& world, float alpha, const FollowCamera& camera,
                       bool showStates) {
     const float pixelsPerYard = camera.pixelsPerYard();
-    const bool canThrow = world.ball().state == BallState::Held ||
-                          world.phase() == PlayPhase::PreSnap;
+    const bool canThrow =
+        world.ball().state == BallState::Held || world.phase() == PlayPhase::PreSnap;
     char buffer[16];
 
     for (const Player& player : world.players()) {
@@ -257,14 +257,16 @@ void drawPlayerLabels(const World& world, float alpha, const FollowCamera& camer
         if (player.receiverNumber != Player::kNone && canThrow &&
             (player.state == PlayerState::PreSnap || player.state == PlayerState::RunningRoute ||
              player.state == PlayerState::Idle)) {
-            const Vector2 badge{center.x, center.y - (player.attributes.radius + 0.7f) * pixelsPerYard};
+            const Vector2 badge{center.x,
+                                center.y - (player.attributes.radius + 0.7f) * pixelsPerYard};
             DrawCircleV(badge, 9.0f, Fade(BLACK, 0.7f));
             std::snprintf(buffer, sizeof(buffer), "%d", player.receiverNumber + 1);
             drawCenteredText(buffer, badge, 14, YELLOW);
         }
 
         if (showStates) {
-            const Vector2 below{center.x, center.y + (player.attributes.radius + 0.5f) * pixelsPerYard};
+            const Vector2 below{center.x,
+                                center.y + (player.attributes.radius + 0.5f) * pixelsPerYard};
             drawCenteredText(toString(player.state), below, 12, Fade(RAYWHITE, 0.9f));
         }
     }
@@ -303,9 +305,10 @@ void drawHud(const Game& game) {
         break;
     }
     DrawRectangle(0, screenHeight - 32, screenWidth, 32, Fade(BLACK, 0.55f));
-    drawCenteredText(help, Vector2{static_cast<float>(screenWidth) / 2.0f,
-                                   static_cast<float>(screenHeight) - 16.0f},
-                     18, RAYWHITE);
+    drawCenteredText(
+        help,
+        Vector2{static_cast<float>(screenWidth) / 2.0f, static_cast<float>(screenHeight) - 16.0f},
+        18, RAYWHITE);
 
     if (world.phase() == PlayPhase::Over) {
         drawResultBanner(world.outcome());

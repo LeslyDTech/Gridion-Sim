@@ -64,8 +64,7 @@ int readInt(const json& object, const char* key, const std::string& where) {
 
 // A point is written as a two-number array: [x, y].
 Vec2 readPoint(const json& value, const std::string& where) {
-    if (!value.is_array() || value.size() != 2 || !value[0].is_number() ||
-        !value[1].is_number()) {
+    if (!value.is_array() || value.size() != 2 || !value[0].is_number() || !value[1].is_number()) {
         fail(where, "expected a point [x, y]");
     }
     return {value[0].get<float>(), value[1].get<float>()};
@@ -84,8 +83,16 @@ Enum parseName(const std::string& name, const std::array<std::pair<const char*, 
 }
 
 constexpr std::array<std::pair<const char*, Role>, 10> kRoleNames = {{
-    {"QB", Role::QB}, {"HB", Role::HB}, {"FB", Role::FB}, {"WR", Role::WR}, {"TE", Role::TE},
-    {"OL", Role::OL}, {"DL", Role::DL}, {"LB", Role::LB}, {"CB", Role::CB}, {"S", Role::S},
+    {"QB", Role::QB},
+    {"HB", Role::HB},
+    {"FB", Role::FB},
+    {"WR", Role::WR},
+    {"TE", Role::TE},
+    {"OL", Role::OL},
+    {"DL", Role::DL},
+    {"LB", Role::LB},
+    {"CB", Role::CB},
+    {"S", Role::S},
 }};
 
 constexpr std::array<std::pair<const char*, Assignment>, 6> kAssignmentNames = {{
@@ -181,7 +188,8 @@ PlayDefinition readPlay(const json& root) {
     }
     play.players.reserve(players.size());
     for (std::size_t i = 0; i < players.size(); ++i) {
-        play.players.push_back(readSlot(players[i], play.side, "players[" + std::to_string(i) + "]"));
+        play.players.push_back(
+            readSlot(players[i], play.side, "players[" + std::to_string(i) + "]"));
     }
     validateUniqueSlots(play.players);
 

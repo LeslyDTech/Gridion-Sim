@@ -82,7 +82,8 @@ void World::setup(const PlayDefinition& offense, const PlayDefinition& defense, 
     // Offense first, so an offensive player's id equals its index in offense.players.
     int receiverNumber = 0;
     for (const SlotDefinition& slot : offense.players) {
-        Player player = makePlayer(slot, Team::Offense, static_cast<int>(m_players.size()), ballSpot);
+        Player player =
+            makePlayer(slot, Team::Offense, static_cast<int>(m_players.size()), ballSpot);
         if (player.assignment == Assignment::RunRoute) {
             player.receiverNumber = receiverNumber++; // throw keys follow file order
         }
@@ -91,7 +92,8 @@ void World::setup(const PlayDefinition& offense, const PlayDefinition& defense, 
     m_snapReceiverId = findSlot(offense, offense.ballCarrierSlot);
 
     for (const SlotDefinition& slot : defense.players) {
-        Player player = makePlayer(slot, Team::Defense, static_cast<int>(m_players.size()), ballSpot);
+        Player player =
+            makePlayer(slot, Team::Defense, static_cast<int>(m_players.size()), ballSpot);
         if (player.assignment == Assignment::ManCoverage) {
             const int target = findSlot(offense, slot.coverSlot);
             if (target == Player::kNone) {
@@ -201,7 +203,8 @@ void World::separate(Player& a, Player& b, const Contact& contact) {
 void World::snap() {
     m_phase = PlayPhase::Live;
     for (Player& player : m_players) {
-        player.handle(player.id == m_snapReceiverId ? PlayerEvent::ReceivedBall : PlayerEvent::Snap);
+        player.handle(player.id == m_snapReceiverId ? PlayerEvent::ReceivedBall
+                                                    : PlayerEvent::Snap);
     }
     // Simplification: the ball goes straight to the snap receiver (QB, or HB on a handoff).
     m_ball.state = BallState::Held;
@@ -218,9 +221,9 @@ void World::tryThrow(int receiverNumber) {
         return;
     }
     for (Player& receiver : m_players) {
-        const bool eligible = receiver.receiverNumber == receiverNumber &&
-                              (receiver.state == PlayerState::RunningRoute ||
-                               receiver.state == PlayerState::Idle);
+        const bool eligible =
+            receiver.receiverNumber == receiverNumber &&
+            (receiver.state == PlayerState::RunningRoute || receiver.state == PlayerState::Idle);
         if (eligible) {
             throwBall(m_ball, passer.position, leadTarget(passer.position, receiver), kPassSpeed,
                       receiver.id);

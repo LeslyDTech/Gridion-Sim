@@ -72,7 +72,7 @@ private:
     const Player& playerById(int id) const { return m_players[static_cast<std::size_t>(id)]; }
 
     std::vector<Player> m_players;
-    std::vector<Vec2> m_desiredVelocities;          // reused every step, one per player
+    std::vector<Vec2> m_desiredVelocities; // reused every step, one per player
     SpatialHash m_spatialHash;
     std::vector<SpatialHash::Pair> m_candidatePairs; // reused every step
     int m_collisionChecks = 0;

@@ -1,0 +1,101 @@
+# Gridiron Sim
+
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+
+A top-down 2D American football play simulator written in modern C++17. Plays are loaded from
+JSON files, 22 players run a per-player state machine with steering-based AI, collisions go
+through a uniform-grid spatial hash, and the whole simulation runs on a deterministic 60 Hz
+fixed timestep, separate from rendering. The game logic is a standalone library with no
+rendering dependency, so it builds and is unit-tested headless. raylib is used only in a thin
+platform layer for the window, input and drawing.
+
+![Screenshot](docs/images/screenshot.png)
+<!-- Placeholder: press F1 in-game for the debug view, take a screenshot, save it as docs/images/screenshot.png -->
+
+## Building
+
+Requirements: CMake 3.25+, a C++17 compiler (MSVC 2022, GCC 11+ or Clang 14+), and Git.
+raylib, nlohmann/json and Catch2 are downloaded automatically by CMake (FetchContent). Nothing
+needs to be installed by hand.
+
+### Windows (PowerShell, Visual Studio 2022 or Build Tools 2022)
+
+```powershell
+cmake -S . -B build -G "Visual Studio 17 2022"
+cmake --build build --config Release --parallel
+ctest --test-dir build -C Release --output-on-failure
+.\build\bin\Release\gridiron.exe
+```
+
+The first configure downloads the dependencies and takes about a minute.
+
+### Linux
+
+```bash
+sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+./build/bin/gridiron
+```
+
+### Build options
+
+| Option | Default | Purpose |
+|---|---|---|
+| `GRIDIRON_BUILD_GAME` | `ON` | Build the raylib executable. `OFF` builds only the core library and tests. |
+| `GRIDIRON_BUILD_TESTS` | `ON` | Build the Catch2 tests. |
+| `GRIDIRON_WARNINGS_AS_ERRORS` | `OFF` | `/WX` / `-Werror` (CI turns this on). |
+
+## Controls
+
+| Action | Keyboard | Gamepad (Xbox layout) |
+|---|---|---|
+| Snap the ball | Space | A |
+| Next play (pre-snap) | Tab | D-pad right |
+| Throw to receiver 1–5 | 1 – 5 | X, Y, B, RB, LB |
+| Move the ball carrier | Arrow keys / WASD | Left stick |
+| Skip the result screen | Space | A |
+| Debug view: grid, collision checks, player states | F1 | Back / View |
+| Cycle the render FPS cap (144 / 60 / 30 / 240 / uncapped) | F3 | – |
+
+Receivers show their throw button in a yellow badge. Before the snap, every route is drawn on the
+field.
+
+## Architecture
+
+```
+src/core      gridiron_core: static library, pure C++17, no raylib
+  World         one play: 22 Players + Ball, stepped at a fixed 60 Hz
+  Game          play sequence: setup -> live -> result -> spot the ball -> next play
+  PlayerState   enum state machine + nextState() transition function
+  PlayerAi      steering behaviors per state (pursue, cover, block)
+  Route         pure waypoint-following math
+  SpatialHash   uniform-grid collision broad phase
+  PlayLoader    JSON -> validated PlayDefinition
+src/platform  gridiron: the executable, the only code that includes raylib
+  App           window, main loop, fixed-timestep driver
+  InputDevice   keyboard + gamepad -> InputCommands
+  Renderer      field, players and HUD, interpolated between simulation steps
+  FollowCamera  smoothed camera clamped to the field
+tests/        Catch2, links gridiron_core only
+data/         plays/*.json and defense/*.json
+```
+
+The full design, trade-offs and roadmap are in [docs/DESIGN.md](docs/DESIGN.md).
+
+## Writing a play
+
+Every player is placed relative to the ball. `x < 0` is the offensive backfield and `y > 0` is
+the offense's right. Route waypoints are relative to where the player lines up. Receivers get
+throw buttons in the order they appear in the file.
+
+```json
+{ "slot": "WR1", "role": "WR", "jersey": 11, "x": -1.0, "y": -18.0, "assignment": "route",
+  "route": [[4.0, 0.0], [10.0, 6.0], [20.0, 12.0]] }
+```
+
+The loader rejects a file with a precise message (for example
+`slant.json: players[3].route[1]: expected a point [x, y]`) when it finds a missing field, a
+wrong type, the wrong player count, a duplicate slot, a player lined up offside, or a role on
+the wrong side of the ball.

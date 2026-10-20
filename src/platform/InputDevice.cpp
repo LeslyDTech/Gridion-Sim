@@ -60,8 +60,8 @@ void InputDevice::poll() {
     m_pending.move = lengthSquared(keys) > 0.0f ? keys : stickMove();
 
     // Edge events: OR them in so they survive until a simulation step consumes them.
-    m_pending.snap = m_pending.snap || IsKeyPressed(KEY_SPACE) ||
-                     gamepadPressed(GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
+    m_pending.snap =
+        m_pending.snap || IsKeyPressed(KEY_SPACE) || gamepadPressed(GAMEPAD_BUTTON_RIGHT_FACE_DOWN);
     m_pending.nextPlay = m_pending.nextPlay || IsKeyPressed(KEY_TAB) ||
                          gamepadPressed(GAMEPAD_BUTTON_LEFT_FACE_RIGHT);
     if (const int target = pressedThrowTarget(); target != InputCommands::kNoThrow) {

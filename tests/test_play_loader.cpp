@@ -27,7 +27,8 @@ std::string makeOffense(const std::string& special,
         { "slot": "O6", "role": "OL", "jersey": 66, "x": -1, "y": 6, "assignment": "block" },
         { "slot": "O7", "role": "OL", "jersey": 67, "x": -1, "y": 7, "assignment": "block" },
         { "slot": "O8", "role": "OL", "jersey": 68, "x": -1, "y": 8, "assignment": "block" },
-        )" + special + R"(
+        )" +
+           special + R"(
       ] })";
 }
 

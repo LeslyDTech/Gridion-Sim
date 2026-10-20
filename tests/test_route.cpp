@@ -43,8 +43,8 @@ TEST_CASE("followRoute total distance is independent of step size", "[route]") {
 
     RouteStep manySmallSteps{{}, 0, false};
     for (int i = 0; i < 90; ++i) {
-        manySmallSteps = followRoute(route, manySmallSteps.nextWaypoint, manySmallSteps.position,
-                                     0.1f);
+        manySmallSteps =
+            followRoute(route, manySmallSteps.nextWaypoint, manySmallSteps.position, 0.1f);
     }
     CHECK(manySmallSteps.position.x == Approx(oneBigStep.position.x).margin(1e-4));
     CHECK(manySmallSteps.position.y == Approx(oneBigStep.position.y).margin(1e-4));
@@ -66,8 +66,8 @@ TEST_CASE("Steering: arrive slows down inside the slow radius", "[steering]") {
 
 TEST_CASE("Steering: pursuit leads a moving target", "[steering]") {
     // Target 10 yards ahead moving up at 5 yd/s; pursuer at 10 yd/s needs ~1 s to get there.
-    const Vec2 aim = steering::predictInterceptPoint({0.0f, 0.0f}, 10.0f, {10.0f, 0.0f},
-                                                     {0.0f, 5.0f}, 2.0f);
+    const Vec2 aim =
+        steering::predictInterceptPoint({0.0f, 0.0f}, 10.0f, {10.0f, 0.0f}, {0.0f, 5.0f}, 2.0f);
     CHECK(aim.x == Approx(10.0f));
     CHECK(aim.y == Approx(5.0f));
 }

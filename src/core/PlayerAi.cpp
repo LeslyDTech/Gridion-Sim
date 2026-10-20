@@ -5,10 +5,10 @@
 namespace gridiron::ai {
 namespace {
 
-constexpr float kMaxLookahead = 1.0f;  // seconds a pursuer leads a moving target
-constexpr float kBlockRange = 7.0f;    // blockers look for defenders this close (yards)
-constexpr float kCoverCushion = 1.0f;  // man defenders stay this far downfield of their man
-constexpr float kArriveRadius = 1.5f;  // slow down this close to a destination
+constexpr float kMaxLookahead = 1.0f; // seconds a pursuer leads a moving target
+constexpr float kBlockRange = 7.0f;   // blockers look for defenders this close (yards)
+constexpr float kCoverCushion = 1.0f; // man defenders stay this far downfield of their man
+constexpr float kArriveRadius = 1.5f; // slow down this close to a destination
 
 const Player* ballCarrier(const Context& context) {
     if (context.ball.state != BallState::Held || context.ball.carrierId == Player::kNone) {
@@ -98,8 +98,7 @@ Vec2 desiredVelocity(const Player& self, const Context& context) {
     case PlayerState::Blocking:
         return blockBehavior(self, context);
     case PlayerState::ReceivingPass:
-        return steering::arrive(self.position, context.ball.target, self.attributes.maxSpeed,
-                                0.5f);
+        return steering::arrive(self.position, context.ball.target, self.attributes.maxSpeed, 0.5f);
     case PlayerState::PreSnap:
     case PlayerState::RunningRoute: // moved by World::runRoute
     case PlayerState::BallCarrier:  // moved by user input
