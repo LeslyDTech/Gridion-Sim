@@ -158,9 +158,6 @@ void App::render(float alpha, float frameSeconds) {
 
     render::drawVignette(context);
     render::drawPlayerLabels(world, context, m_overlay.enabled());
-    if (m_polish) {
-        m_effects.drawResultPopup(context);
-    }
     render::drawHud(*m_game, context);
 
     const int players = static_cast<int>(world.players().size());

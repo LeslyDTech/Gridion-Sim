@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RenderContext.h"
 #include "core/Vec2.h"
 #include "core/World.h"
 
@@ -13,7 +12,8 @@
 namespace gridiron {
 
 // Presentation-only state the simulation doesn't need: facing directions, the route overlay
-// fade, camera shake and zoom, grass particles and the "+N YDS" popup.
+// fade, camera shake and zoom and grass particles. (The "+N YDS" popup is part of the broadcast
+// HUD: see BroadcastHud.)
 //
 // It is updated once per rendered frame by *watching* the const World (for example, the phase
 // switching from Live to Over with a Tackled outcome triggers shake and particles), so the core
@@ -44,8 +44,6 @@ public:
 
     // World space: grass and chalk kicked up by tackles.
     void drawParticles() const;
-    // Screen space: animated "+7 YDS" at the spot where the play ended.
-    void drawResultPopup(const RenderContext& context) const;
 
 private:
     struct Particle {
@@ -55,13 +53,6 @@ private:
         float lifetime = 0.0f; // 0 = slot unused
         float size = 0.0f;
         Color color{};
-    };
-
-    struct Popup {
-        bool active = false;
-        float age = 0.0f;
-        Vec2 spot;
-        PlayOutcome outcome;
     };
 
     void onPlayEnded(const PlayOutcome& outcome);
@@ -80,7 +71,6 @@ private:
     float m_time = 0.0f;
     float m_trauma = 0.0f; // 0..1, shake strength is trauma^2
     float m_zoom = 1.0f;
-    Popup m_popup;
 };
 
 } // namespace gridiron

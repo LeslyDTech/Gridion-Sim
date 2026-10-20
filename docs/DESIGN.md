@@ -138,6 +138,17 @@ effect is time-based, so it looks the same at any frame rate. F2 switches all of
 before/after comparisons. The camera centers the field in the area above the scorebug, so the
 HUD never hides a player.
 
+The broadcast HUD (`BroadcastHud`) is a translation of a Figma frame, not generated web code:
+the Figma MCP reference code was used only as a measurement source. Each group is anchored to a
+screen edge (banner top center, playbook panel top right, scorebug and controls bar bottom
+center, popup screen center), so the layout holds at any window size. Figma font sizes convert to
+raylib sizes x1.2 (Barlow Condensed's ascender - descender is 1.2 em), and HUD fonts are
+rasterized at the exact sizes used. raylib truncates glyph advances to whole pixels, which made
+lines ~10% narrower than the design; `Assets` re-derives advances from an 8x rasterization and
+rounds them. The popup animation is driven by `Game::secondsSincePlayEnded()`, so it needs no
+state of its own, and down & distance are measured from `Game::lineOfScrimmageX()`, the spot of
+the next snap once a play has ended.
+
 Art (Kenney Sports Pack, CC0) is loaded by `Assets` (RAII) and is optional: if a texture is
 missing, the renderer draws shapes instead. `Theme.h` was resampled from the sprites so the
 code-drawn elements and the art share one palette.

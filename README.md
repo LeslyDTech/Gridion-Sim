@@ -52,6 +52,7 @@ ctest --test-dir build --output-on-failure
 | Action | Keyboard | Gamepad (Xbox layout) |
 |---|---|---|
 | Snap the ball | Space | A |
+| Select play 1–4 (pre-snap) | 1 – 4 | X, Y, B, RB |
 | Next play (pre-snap) | Tab | D-pad right |
 | Throw to receiver 1–5 | 1 – 5 | X, Y, B, RB, LB |
 | Move the ball carrier | Arrow keys / WASD | Left stick |
@@ -77,8 +78,11 @@ All visual polish lives in `src/platform`. F2 turns it off to show the plain Mil
 - Camera zoom-out on deep passes, screen shake and grass particles on tackles (from a fixed
   256-particle pool, no per-frame allocations), a ball arc with a ground shadow that shrinks as
   the ball rises, and an eased "+N YDS" popup.
-- A broadcast scorebug with score, down & distance, ball spot and play clock, in Bebas Neue
-  (SIL Open Font License, `assets/fonts/OFL.txt`).
+- A broadcast HUD rebuilt from a Figma design (frame "Football Broadcast HUD / 1280x720"):
+  play-call banner, pre-snap playbook panel, scorebug (score, down & distance, field position,
+  play clock), yards-gained popup with a FIRST DOWN tag, and a controls bar. Every color, size,
+  padding and position is a named constant in `Theme.h` (`theme::hud`), named after its Figma
+  layer, and every value shown comes from the game state in `src/core`.
 - Top-down player, ball and grass art from Kenney's Sports Pack, rotated to each player's facing
   direction and sized to the collision circles (details in `assets/ASSETS.md`).
 
@@ -99,7 +103,8 @@ src/platform  gridiron: the executable, the only code that includes raylib
   InputDevice   keyboard + gamepad -> InputCommands
   FieldRenderer turf, end zones, lines, painted numbers, vignette
   Renderer      players, ball, routes, labels, interpolated between simulation steps
-  Hud           play call, scorebug, controls help
+  Hud           picks the broadcast HUD (polish on) or the plain HUD (F2 off)
+  BroadcastHud  the Figma HUD: banner, playbook panel, popup, scorebug, controls bar
   Effects       presentation-only state: facing, particles, shake, zoom, popup, play clock
   FollowCamera  smoothed camera clamped to the field, zoom, shake, HUD-aware framing
   Assets        RAII owner of the TTF font and vignette texture
@@ -131,5 +136,7 @@ the wrong side of the ball.
 
 - Player, ball and field tile art: [Sports Pack](https://kenney.nl/assets/sports-pack) by Kenney,
   CC0 1.0 (`assets/LICENSE-kenney.txt`).
-- Font: [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) by Dharma Type, SIL Open Font
-  License 1.1 (`assets/fonts/OFL.txt`).
+- Fonts: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby (HUD) and
+  [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) by Dharma Type (field paint, jersey
+  numbers), both SIL Open Font License 1.1 (`assets/fonts/OFL-Barlow.txt`,
+  `assets/fonts/OFL-BebasNeue.txt`).

@@ -87,6 +87,10 @@ TEST_CASE("The drive updates the moment a play ends and the play stays selected"
     REQUIRE(game.world().phase() == PlayPhase::Over);
     CHECK(game.drive().down() == 2); // already 2nd down while the result is shown
     CHECK(game.lastDriveEvent() == DriveEvent::None);
+    // Down & distance is measured from the new spot, not the old line of scrimmage.
+    const float newLine = game.lineOfScrimmageX();
+    CHECK(newLine < game.world().lineOfScrimmageX()); // a loss moved the ball back
+    CHECK(game.drive().yardsToGo(newLine) > 10);
     CHECK(game.secondsSincePlayEnded() >= 0.0f);
 
     runSeconds(game, InputCommands{}, Game::kResultSeconds + 0.1f);

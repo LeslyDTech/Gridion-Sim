@@ -41,6 +41,11 @@ public:
     // play ends, so the result can be shown while the play is still on screen.
     DriveEvent lastDriveEvent() const { return m_lastDriveEvent; }
 
+    // Line of scrimmage of the current play, or of the next one once a play has ended (the ball
+    // is spotted the moment the whistle blows). Use this, not world().lineOfScrimmageX(), for
+    // down & distance and field position.
+    float lineOfScrimmageX() const { return m_ballSpot.x; }
+
     // Seconds since the current play ended (0 while it is live); drives the result animation.
     float secondsSincePlayEnded() const { return m_resultTimer; }
 

@@ -1,13 +1,9 @@
 #include "Effects.h"
 
-#include "Assets.h"
-#include "Easing.h"
-#include "FollowCamera.h"
 #include "Theme.h"
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
 
 namespace gridiron {
 namespace {
@@ -23,52 +19,11 @@ constexpr float kZoomSharpness = 3.0f;
 constexpr float kMaxShakeYards = 0.6f;
 constexpr float kTraumaDecayPerSecond = 1.6f;
 
-constexpr float kPopupSeconds = 2.2f;
-constexpr float kPopupPopSeconds = 0.35f;
-constexpr float kPopupFadeSeconds = 0.6f;
-
 // Exponential smoothing factor that behaves the same at any frame rate.
 float smoothing(float sharpness, float seconds) { return 1.0f - std::exp(-sharpness * seconds); }
 
 Vec2 defaultFacing(Team team) {
     return team == Team::Offense ? Vec2{1.0f, 0.0f} : Vec2{-1.0f, 0.0f};
-}
-
-// Short popup label for a finished play, e.g. "+7 YDS". Writes into a caller-owned buffer.
-void formatPopup(const PlayOutcome& outcome, char* buffer, std::size_t size) {
-    switch (outcome.result) {
-    case PlayResult::Touchdown:
-        std::snprintf(buffer, size, "TOUCHDOWN");
-        return;
-    case PlayResult::Safety:
-        std::snprintf(buffer, size, "SAFETY");
-        return;
-    case PlayResult::Incomplete:
-        std::snprintf(buffer, size, "INCOMPLETE");
-        return;
-    case PlayResult::Tackled:
-    case PlayResult::OutOfBounds:
-    case PlayResult::None:
-        break;
-    }
-    const long yards = std::lround(outcome.yardsGained);
-    std::snprintf(buffer, size, "%+ld YDS", yards);
-}
-
-Color popupColor(const PlayOutcome& outcome) {
-    switch (outcome.result) {
-    case PlayResult::Touchdown:
-        return theme::kLineWhite;
-    case PlayResult::Incomplete:
-        return theme::kLineWhite;
-    case PlayResult::Safety:
-        return theme::kAway;
-    case PlayResult::Tackled:
-    case PlayResult::OutOfBounds:
-    case PlayResult::None:
-        break;
-    }
-    return outcome.yardsGained >= 0.0f ? theme::kLineWhite : theme::kAway; // losses in orange
 }
 
 } // namespace
@@ -83,18 +38,11 @@ void Effects::update(const World& world, float frameSeconds) {
         onPlayEnded(world.outcome());
     }
     if (phase == PlayPhase::PreSnap) {
-        if (m_previousPhase != PlayPhase::PreSnap) {
-            m_popup.active = false; // a new play has been set up
-        }
     }
     m_previousPhase = phase;
 
     m_secondsSinceSnap = phase == PlayPhase::PreSnap ? 0.0f : m_secondsSinceSnap + frameSeconds;
     m_trauma = std::max(0.0f, m_trauma - kTraumaDecayPerSecond * frameSeconds);
-    if (m_popup.active) {
-        m_popup.age += frameSeconds;
-        m_popup.active = m_popup.age < kPopupSeconds;
-    }
 
     updateFacing(world, frameSeconds);
     updateParticles(frameSeconds);
@@ -102,8 +50,6 @@ void Effects::update(const World& world, float frameSeconds) {
 }
 
 void Effects::onPlayEnded(const PlayOutcome& outcome) {
-    m_popup = Popup{true, 0.0f, outcome.spot, outcome};
-
     if (outcome.result == PlayResult::Tackled || outcome.result == PlayResult::Safety) {
         m_trauma = std::min(1.0f, m_trauma + 0.75f);
         spawnBurst(outcome.spot, 36, 7.0f);
@@ -197,32 +143,6 @@ void Effects::drawParticles() const {
         DrawCircleV(Vector2{particle.position.x, particle.position.y}, particle.size * life,
                     Fade(particle.color, life));
     }
-}
-
-void Effects::drawResultPopup(const RenderContext& context) const {
-    if (!m_popup.active) {
-        return;
-    }
-    char text[24];
-    formatPopup(m_popup.outcome, text, sizeof(text));
-
-    const float t = m_popup.age;
-    const float scale = 0.4f + 0.6f * easing::outBack(t / kPopupPopSeconds);
-    const float rise = 60.0f * easing::outCubic(t / kPopupSeconds);
-    const float fadeStart = kPopupSeconds - kPopupFadeSeconds;
-    const float opacity = t < fadeStart ? 1.0f : 1.0f - (t - fadeStart) / kPopupFadeSeconds;
-
-    const Font& font = context.assets.font();
-    const float fontSize = 64.0f * scale;
-    const float spacing = 2.0f * scale;
-    const Vector2 size = MeasureTextEx(font, text, fontSize, spacing);
-    const Vector2 anchor = context.camera.worldToScreen(m_popup.spot);
-    const Vector2 position{anchor.x - size.x / 2.0f, anchor.y - size.y - 30.0f - rise};
-
-    // Dark drop shadow first so the text reads on any background.
-    DrawTextEx(font, text, Vector2{position.x + 3.0f, position.y + 3.0f}, fontSize, spacing,
-               theme::shadow(0.7f * opacity));
-    DrawTextEx(font, text, position, fontSize, spacing, Fade(popupColor(m_popup.outcome), opacity));
 }
 
 } // namespace gridiron

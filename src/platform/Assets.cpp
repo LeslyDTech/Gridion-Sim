@@ -53,8 +53,8 @@ Font loadFontAtSize(const std::filesystem::path& path, int pixelSize) {
     int dataSize = 0;
     unsigned char* data = LoadFileData(path.string().c_str(), &dataSize);
     if (data != nullptr) {
-        GlyphInfo* precise = LoadFontData(data, dataSize, pixelSize * kPrecision,
-                                          codepoints.data(), count, FONT_DEFAULT);
+        GlyphInfo* precise = LoadFontData(data, dataSize, pixelSize * kPrecision, codepoints.data(),
+                                          count, FONT_DEFAULT);
         if (precise != nullptr) {
             // Both arrays follow the order of `codepoints`.
             for (int i = 0; i < count && i < font.glyphCount; ++i) {

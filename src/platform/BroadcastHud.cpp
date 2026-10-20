@@ -39,9 +39,8 @@ Vector2 measure(const Assets& assets, const TextStyle& style, const char* text) 
 // glyphs rasterized at this exact size stay sharp.
 void drawText(const Assets& assets, const TextStyle& style, const char* text, Vector2 topLeft,
               Color color) {
-    DrawTextEx(fontFor(assets, style), text,
-               Vector2{std::round(topLeft.x), std::round(topLeft.y)}, pixelSize(style), 0.0f,
-               color);
+    DrawTextEx(fontFor(assets, style), text, Vector2{std::round(topLeft.x), std::round(topLeft.y)},
+               pixelSize(style), 0.0f, color);
 }
 
 // Text vertically centered in `box`, `align` 0 = left edge + padding, 1 = right edge - padding.
@@ -105,7 +104,7 @@ void formatDownAndDistance(const Game& game, char* buffer, std::size_t size) {
         std::snprintf(buffer, size, "%s & GOAL", ordinal(drive.down()));
     } else {
         std::snprintf(buffer, size, "%s & %d", ordinal(drive.down()),
-                      drive.yardsToGo(game.world().lineOfScrimmageX()));
+                      drive.yardsToGo(game.lineOfScrimmageX()));
     }
 }
 
@@ -415,7 +414,7 @@ void drawScorebug(const Game& game, const Assets& assets) {
     x += kScorebugDividerWidth;
 
     // Scorebug/FieldPosition: the line of scrimmage of the upcoming (or current) snap.
-    formatFieldPosition(game.world().lineOfScrimmageX(), text, sizeof(text));
+    formatFieldPosition(game.lineOfScrimmageX(), text, sizeof(text));
     drawTextInBox(assets, kScorebugFieldPositionLabel, text,
                   Rectangle{x, bug.y, kScorebugFieldPositionWidth, bug.height},
                   kScorebugSegmentPaddingX, 0.0f);

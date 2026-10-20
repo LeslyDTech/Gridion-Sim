@@ -39,7 +39,7 @@ void formatDownAndDistance(const Game& game, char* buffer, std::size_t size) {
         std::snprintf(buffer, size, "%s & GOAL", ordinal(drive.down()));
     } else {
         std::snprintf(buffer, size, "%s & %d", ordinal(drive.down()),
-                      drive.yardsToGo(game.world().lineOfScrimmageX()));
+                      drive.yardsToGo(game.lineOfScrimmageX()));
     }
 }
 
@@ -124,7 +124,7 @@ void drawPlainTopBar(const Game& game, int playClockSeconds) {
     char downAndDistance[24];
     char ballOn[16];
     formatDownAndDistance(game, downAndDistance, sizeof(downAndDistance));
-    formatBallOn(game.world().lineOfScrimmageX(), ballOn, sizeof(ballOn));
+    formatBallOn(game.lineOfScrimmageX(), ballOn, sizeof(ballOn));
 
     char buffer[192];
     std::snprintf(buffer, sizeof(buffer), "%s  |  %s  |  Ball on %s  |  %s %d - %d %s  |  :%02d",
@@ -155,9 +155,7 @@ void drawResultBanner(const PlayOutcome& outcome) {
 
 } // namespace
 
-int hudBottomInset(bool polish) {
-    return polish ? broadcast::bottomInset() : kHelpBarHeight;
-}
+int hudBottomInset(bool polish) { return polish ? broadcast::bottomInset() : kHelpBarHeight; }
 
 void drawHud(const Game& game, const RenderContext& context) {
     const int playClockSeconds = game.playClockSeconds();
@@ -165,6 +163,7 @@ void drawHud(const Game& game, const RenderContext& context) {
     if (context.polish) {
         broadcast::drawPlayCallBanner(game, context.assets);
         broadcast::drawPlaySelectPanel(game, context.assets);
+        broadcast::drawYardsGainedPopup(game, context.assets);
         broadcast::drawScorebug(game, context.assets);
         broadcast::drawControlsBar(world, context.assets);
         return;
