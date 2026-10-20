@@ -164,9 +164,10 @@ Estimates assume part-time work (about 10 h/week) and include tests.
 
 ### Milestone 2: Football depth (about 3 weeks)
 
+(Down & distance and score were pulled forward into the polish milestone.)
+
 | Task | Estimate |
 |---|---|
-| Down & distance, first-down line, drive state in `Game` (+ tests) | 4 h |
 | Players accelerate/decelerate through route cuts (speed loss scales with cut angle) | 4 h |
 | Player ratings in JSON (speed, strength, tackling); collision push weighted by mass | 5 h |
 | Broken tackles: tackle probability from ratings and closing speed, seeded RNG for determinism | 4 h |
