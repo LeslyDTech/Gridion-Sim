@@ -23,9 +23,6 @@ constexpr float kVisibleYardsAcross = 32.0f; // close, broadcast-style framing o
 // F3 cycles through these render caps to show that simulation speed does not depend on them.
 constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
 
-// Exponential moving average: smooths the update-time readout so it is readable.
-double smooth(double average, double sample) { return average + (sample - average) * 0.05; }
-
 // data/ and assets/ are copied next to the executable by the build
 // (see src/platform/CMakeLists.txt).
 std::filesystem::path dataDirectory() {
@@ -85,7 +82,8 @@ void App::run() {
 }
 
 void App::runSimulationSteps(int steps) {
-    m_stats.stepsThisFrame = steps;
+    m_frame.steps = steps;
+    m_frame.updateSeconds = 0.0;
     if (!m_game || steps == 0) {
         return;
     }
@@ -100,8 +98,8 @@ void App::runSimulationSteps(int steps) {
             m_camera.snapTo(spot, GetScreenWidth(), GetScreenHeight());
         }
     }
-    const std::chrono::duration<double, std::milli> elapsed = Clock::now() - start;
-    m_stats.updateMs = smooth(m_stats.updateMs, elapsed.count() / steps);
+    const std::chrono::duration<double> elapsed = Clock::now() - start;
+    m_frame.updateSeconds = elapsed.count();
 }
 
 void App::applyCameraInset() { m_camera.setBottomInset(render::hudBottomInset(m_polish)); }
@@ -160,13 +158,11 @@ void App::render(float alpha, float frameSeconds) {
     render::drawPlayerLabels(world, context, m_overlay.enabled());
     render::drawHud(*m_game, context);
 
-    const int players = static_cast<int>(world.players().size());
-    m_stats.fps = GetFPS();
-    m_stats.fpsCap = kFpsCaps[m_fpsCapIndex];
-    m_stats.polish = m_polish;
-    m_stats.collisionChecks = world.collisionChecks();
-    m_stats.bruteForcePairs = players * (players - 1) / 2;
-    m_overlay.drawStats(m_stats);
+    m_frame.frameSeconds = frameSeconds;
+    m_frame.collisionChecks = world.collisionChecks();
+    m_overlay.record(m_frame);
+    m_overlay.drawStats(m_assets, OverlaySettings{kFpsCaps[m_fpsCapIndex], m_polish,
+                                                  static_cast<int>(world.players().size())});
     EndDrawing();
 }
 

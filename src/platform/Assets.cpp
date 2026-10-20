@@ -144,6 +144,12 @@ Assets::Assets(const std::filesystem::path& assetDirectory) : m_defaultFont(GetF
         m_hudFonts[i] = HudFont{weight, size, font};
     }
     m_grass = loadTexture(assetDirectory / "tiles" / "field_grass.png");
+
+    const std::filesystem::path mono = fonts / "JetBrainsMono-Regular.ttf";
+    if (std::filesystem::exists(mono)) {
+        m_debugFont = loadFontAtSize(mono, kDebugFontSize);
+        m_hasDebugFont = IsFontValid(m_debugFont);
+    }
 }
 
 Assets::~Assets() {
@@ -159,6 +165,9 @@ Assets::~Assets() {
         if (IsFontValid(hud.font)) {
             UnloadFont(hud.font);
         }
+    }
+    if (m_hasDebugFont) {
+        UnloadFont(m_debugFont);
     }
     UnloadTexture(m_vignette);
     if (m_hasCustomFont) {

@@ -1,25 +1,54 @@
 #include "DebugOverlay.h"
 
+#include "Assets.h"
 #include "Theme.h"
 #include "core/SpatialHash.h"
 
 #include <raylib.h>
 
+#include <cmath>
 #include <cstdio>
 
 namespace gridiron {
 namespace {
 
-constexpr int kFontSize = 18;
-constexpr int kLineHeight = 22;
-constexpr int kPadding = 8;
+// JetBrains Mono at raylib size 22: every glyph advance is exactly 10 px (0.6 em advance over a
+// 1.32 em ascender-descender), so fixed-width printf fields line up as true columns.
+constexpr int kLineHeight = 24;
+constexpr int kPanelLeft = 8;
+constexpr int kPanelTop = 8;
+constexpr int kPadding = 12;
 
-// One line of text. A fixed char buffer avoids heap allocations every frame.
-void drawLine(int line, const char* text) {
-    DrawText(text, kPadding * 2, kPadding * 2 + line * kLineHeight, kFontSize, theme::kLineWhite);
+// One line of text on whole pixels. A fixed char buffer avoids heap allocations every frame.
+void drawLine(const Font& font, int line, const char* text) {
+    const Vector2 position{static_cast<float>(kPanelLeft + kPadding),
+                           static_cast<float>(kPanelTop + kPadding / 2 + line * kLineHeight)};
+    DrawTextEx(font, text, position, static_cast<float>(Assets::kDebugFontSize), 0.0f,
+               theme::kLineWhite);
 }
 
 } // namespace
+
+void DebugOverlay::record(const FrameSample& sample) {
+    m_window.seconds += sample.frameSeconds;
+    m_window.frames += 1;
+    m_window.updateSeconds += sample.updateSeconds;
+    m_window.steps += sample.steps;
+    m_window.collisionChecks += sample.collisionChecks;
+
+    if (m_window.seconds < kRefreshSeconds) {
+        return;
+    }
+    const float frames = static_cast<float>(m_window.frames);
+    m_shown.fps = frames / m_window.seconds;
+    m_shown.stepsPerFrame = static_cast<float>(m_window.steps) / frames;
+    m_shown.collisionChecks = static_cast<float>(m_window.collisionChecks) / frames;
+    if (m_window.steps > 0) { // keep the last value through a window with no steps
+        m_shown.updateMicroseconds =
+            static_cast<float>(m_window.updateSeconds * 1.0e6 / m_window.steps);
+    }
+    m_window = Window{};
+}
 
 void DebugOverlay::drawGrid(const SpatialHash& grid) const {
     if (!m_enabled) {
@@ -54,31 +83,51 @@ void DebugOverlay::drawGrid(const SpatialHash& grid) const {
     }
 }
 
-void DebugOverlay::drawStats(const FrameStats& stats) const {
-    const int lines = m_enabled ? 4 : 3;
-    DrawRectangle(kPadding, kPadding, kPanelRight - kPadding, lines * kLineHeight + kPadding * 2,
-                  theme::panel(0.6f));
+void DebugOverlay::drawStats(const Assets& assets, const OverlaySettings& settings) const {
+    if (!m_enabled) {
+        return;
+    }
+    constexpr int kLines = 6;
+    DrawRectangle(kPanelLeft, kPanelTop, kPanelRight - kPanelLeft, kLines * kLineHeight + kPadding,
+                  theme::panel(0.75f));
 
-    char buffer[96];
-    if (stats.fpsCap > 0) {
-        std::snprintf(buffer, sizeof(buffer), "FPS: %d (cap %d, F3)", stats.fps, stats.fpsCap);
+    const Font& font = assets.debugFont();
+    char line[64];
+    char detail[16];
+
+    // Every line has the same four fixed-width columns: label (14), value (7, right-aligned),
+    // detail (10), key. A value changing width can never move anything else.
+    constexpr const char* kFormat = "%-14s%7s  %-10s%s";
+    char value[16];
+
+    std::snprintf(value, sizeof(value), "%.1f", static_cast<double>(m_shown.fps));
+    if (settings.fpsCap > 0) {
+        std::snprintf(detail, sizeof(detail), "cap %4d", settings.fpsCap);
     } else {
-        std::snprintf(buffer, sizeof(buffer), "FPS: %d (uncapped, F3)", stats.fps);
+        std::snprintf(detail, sizeof(detail), "cap  off");
     }
-    drawLine(0, buffer);
+    std::snprintf(line, sizeof(line), kFormat, "FPS", value, detail, "F3");
+    drawLine(font, 0, line);
 
-    std::snprintf(buffer, sizeof(buffer), "Update: %.3f ms @ 60 Hz", stats.updateMs);
-    drawLine(1, buffer);
+    std::snprintf(value, sizeof(value), "%.1f", static_cast<double>(m_shown.updateMicroseconds));
+    std::snprintf(line, sizeof(line), kFormat, "Update", value, "us/step", "");
+    drawLine(font, 1, line);
 
-    std::snprintf(buffer, sizeof(buffer), "Steps: %d   Debug: %s (F1)   Polish: %s (F2)",
-                  stats.stepsThisFrame, m_enabled ? "on" : "off", stats.polish ? "on" : "off");
-    drawLine(2, buffer);
+    std::snprintf(value, sizeof(value), "%.2f", static_cast<double>(m_shown.stepsPerFrame));
+    std::snprintf(line, sizeof(line), kFormat, "Steps/frame", value, "@ 60 Hz", "");
+    drawLine(font, 2, line);
 
-    if (m_enabled) {
-        std::snprintf(buffer, sizeof(buffer), "Collision checks: %d (brute force: %d)",
-                      stats.collisionChecks, stats.bruteForcePairs);
-        drawLine(3, buffer);
-    }
+    const int bruteForce = settings.players * (settings.players - 1) / 2;
+    std::snprintf(value, sizeof(value), "%.0f", static_cast<double>(m_shown.collisionChecks));
+    std::snprintf(detail, sizeof(detail), "of %4d", bruteForce);
+    std::snprintf(line, sizeof(line), kFormat, "Coll. checks", value, detail, "");
+    drawLine(font, 3, line);
+
+    std::snprintf(line, sizeof(line), kFormat, "Polish", settings.polish ? "on" : "off", "", "F2");
+    drawLine(font, 4, line);
+
+    std::snprintf(line, sizeof(line), kFormat, "Debug", "on", "", "F1");
+    drawLine(font, 5, line);
 }
 
 } // namespace gridiron

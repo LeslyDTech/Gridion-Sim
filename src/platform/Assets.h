@@ -20,6 +20,8 @@ namespace gridiron {
 class Assets {
 public:
     static constexpr int kSkinTones = 5; // sprite variants per jersey color
+    // Debug overlay font size: JetBrains Mono's advance is exactly 10 px at this size.
+    static constexpr int kDebugFontSize = 22;
 
     explicit Assets(const std::filesystem::path& assetDirectory);
     ~Assets();
@@ -32,6 +34,10 @@ public:
     // Broadcast HUD font (Barlow Condensed) rasterized at `pixelSize`, or the nearest size that
     // was preloaded (Hud draws at exactly those sizes). Falls back to font() if missing.
     const Font& hudFont(theme::hud::Weight weight, float pixelSize) const;
+
+    // Monospace font for the F1 debug overlay (JetBrains Mono at kDebugFontSize), or raylib's
+    // default font if the file is missing.
+    const Font& debugFont() const { return m_hasDebugFont ? m_debugFont : m_defaultFont; }
 
     // Transparent in the middle, dark at the edges; stretched over the whole screen.
     const Texture2D& vignette() const { return m_vignette; }
@@ -50,6 +56,8 @@ private:
     Font m_font{};
     Font m_defaultFont{};
     bool m_hasCustomFont = false;
+    Font m_debugFont{};
+    bool m_hasDebugFont = false;
     Texture2D m_vignette{};
 
     struct HudFont {

@@ -45,7 +45,7 @@ private:
     FollowCamera m_camera;
     DebugOverlay m_overlay;
     Effects m_effects;
-    FrameStats m_stats;
+    FrameSample m_frame; // measurements of the current frame, handed to the debug overlay
     int m_fpsCapIndex = 0;
     bool m_polish = true; // F2: all visual polish on/off, for before/after screenshots
 
