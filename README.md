@@ -57,7 +57,7 @@ ctest --test-dir build --output-on-failure
 | Throw to receiver 1–5 | 1 – 5 | X, Y, B, RB, LB |
 | Move the ball carrier | Arrow keys / WASD | Left stick |
 | Skip the result screen | Space | A |
-| Debug view: grid, collision checks, player states | F1 | Back / View |
+| Debug view (off by default): stats, grid, player states | F1 | Back / View |
 | Visual polish on/off (before/after comparison) | F2 | – |
 | Cycle the render FPS cap (144 / 60 / 30 / 240 / uncapped) | F3 | – |
 
@@ -136,7 +136,7 @@ the wrong side of the ball.
 
 - Player, ball and field tile art: [Sports Pack](https://kenney.nl/assets/sports-pack) by Kenney,
   CC0 1.0 (`assets/LICENSE-kenney.txt`).
-- Fonts: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby (HUD) and
+- Fonts: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby (HUD),
   [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) by Dharma Type (field paint, jersey
-  numbers), both SIL Open Font License 1.1 (`assets/fonts/OFL-Barlow.txt`,
-  `assets/fonts/OFL-BebasNeue.txt`).
+  numbers) and [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (debug overlay), all
+  SIL Open Font License 1.1 (`assets/fonts/OFL-*.txt`).

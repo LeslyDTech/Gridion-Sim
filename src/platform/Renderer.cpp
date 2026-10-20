@@ -255,6 +255,47 @@ void drawCenteredText(const char* text, Vector2 center, int fontSize, Color colo
              static_cast<int>(center.y) - fontSize / 2, fontSize, color);
 }
 
+// Throw-button badges: a dark disc with the receiver's number, at a fixed offset diagonally
+// above-left of the player, just outside the sprite's edge, so it never covers the player and
+// reads the same at every zoom.
+constexpr float kBadgeRadiusPixels = 9.0f;
+constexpr float kBadgeGapPixels = 2.0f;
+
+bool showsBadge(const Player& player, const World& world) {
+    const bool canThrow =
+        world.ball().state == BallState::Held || world.phase() == PlayPhase::PreSnap;
+    return player.receiverNumber != Player::kNone && canThrow &&
+           (player.state == PlayerState::PreSnap || player.state == PlayerState::RunningRoute ||
+            player.state == PlayerState::Idle);
+}
+
+void drawReceiverBadges(const World& world, const RenderContext& context) {
+    using theme::hud::Weight;
+    const float pixelsPerYard = context.camera.pixelsPerYard();
+    char number[4];
+    for (const Player& player : world.players()) {
+        if (!showsBadge(player, world)) {
+            continue;
+        }
+        const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
+        // Distance from the player's center to the sprite's edge along the diagonal, plus the
+        // badge radius and a small gap: the badge sits just beyond the top-left of the sprite.
+        const float spriteHalf = kSpriteShoulderToRadius * player.attributes.radius / 2.0f;
+        const float diagonal =
+            (spriteHalf * pixelsPerYard + kBadgeGapPixels) * 0.70710678f + kBadgeRadiusPixels;
+        const Vector2 badge{std::round(center.x - diagonal), std::round(center.y - diagonal)};
+
+        DrawCircleV(badge, kBadgeRadiusPixels, theme::panel(0.85f));
+        std::snprintf(number, sizeof(number), "%d", player.receiverNumber + 1);
+        if (context.polish) {
+            text::drawCentered(context.assets.hudFont(Weight::Bold, 17.0f), number, badge, 17.0f,
+                               theme::kLineWhite);
+        } else {
+            drawCenteredText(number, badge, 14, theme::kLineWhite);
+        }
+    }
+}
+
 } // namespace
 
 // ================================================================ world space
@@ -369,29 +410,14 @@ void drawBall(const World& world, const RenderContext& context) {
 
 void drawPlayerLabels(const World& world, const RenderContext& context, bool debug) {
     const float pixelsPerYard = context.camera.pixelsPerYard();
-    const bool canThrow =
-        world.ball().state == BallState::Held || world.phase() == PlayPhase::PreSnap;
-    char buffer[16];
 
+    // Pass 1: jersey numbers and (debug) state names.
     for (const Player& player : world.players()) {
         const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
-
         const bool sprites = context.polish && spriteFor(player, context.assets) != nullptr;
         if (showJerseyNumber(player, context, debug)) {
             drawJerseyNumber(player, center, pixelsPerYard, sprites, context);
         }
-
-        // Throw-button badge above each eligible receiver.
-        if (player.receiverNumber != Player::kNone && canThrow &&
-            (player.state == PlayerState::PreSnap || player.state == PlayerState::RunningRoute ||
-             player.state == PlayerState::Idle)) {
-            const Vector2 badge{center.x,
-                                center.y - (player.attributes.radius + 0.7f) * pixelsPerYard};
-            DrawCircleV(badge, 9.0f, theme::panel(0.85f));
-            std::snprintf(buffer, sizeof(buffer), "%d", player.receiverNumber + 1);
-            drawCenteredText(buffer, badge, 14, theme::kLineWhite);
-        }
-
         if (debug) {
             const float offset = sprites ? 1.3f : 0.5f; // stay clear of the jersey number
             const Vector2 below{center.x,
@@ -399,6 +425,9 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool deb
             drawCenteredText(toString(player.state), below, 12, theme::kLineWhite);
         }
     }
+
+    // Pass 2: throw-button badges, after everything else so no sprite or label can cover one.
+    drawReceiverBadges(world, context);
 }
 
 } // namespace gridiron::render

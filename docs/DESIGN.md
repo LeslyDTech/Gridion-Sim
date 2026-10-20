@@ -149,6 +149,12 @@ rounds them. The popup animation is driven by `Game::secondsSincePlayEnded()`, s
 state of its own, and down & distance are measured from `Game::lineOfScrimmageX()`, the spot of
 the next snap once a play has ended.
 
+The camera (`FollowCamera`) frames every player inside the HUD-free safe area: zoom is the closer
+of a 32-yard view and the zoom that fits the players' bounding box, and the center follows the
+ball within those limits. The limits are re-applied after smoothing each frame, so a fast player
+can never slip under the scorebug while the camera catches up. Formation spacing (1-yard line
+splits) lives in the play JSON, and the loader rejects formations whose players overlap.
+
 Art (Kenney Sports Pack, CC0) is loaded by `Assets` (RAII) and is optional: if a texture is
 missing, the renderer draws shapes instead. `Theme.h` was resampled from the sprites so the
 code-drawn elements and the art share one palette.
