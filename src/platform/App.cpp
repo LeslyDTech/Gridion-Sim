@@ -133,6 +133,7 @@ void App::render(float alpha, float frameSeconds) {
     BeginDrawing();
     ClearBackground(theme::kUiDark);
 
+    m_effects.update(world, frameSeconds);
     const RenderContext context{m_camera, m_assets, alpha, m_polish, GetTime()};
 
     BeginMode2D(m_camera.raylibCamera());
@@ -140,7 +141,7 @@ void App::render(float alpha, float frameSeconds) {
     render::drawLineOfScrimmage(world, context);
     m_overlay.drawGrid(world.spatialHash());
     render::drawRoutes(world, context);
-    render::drawPlayers(world, context);
+    render::drawPlayers(world, context, m_effects);
     render::drawBall(world, context);
     EndMode2D();
 

@@ -4,6 +4,7 @@ add_executable(gridiron
     App.cpp
     Assets.cpp
     DebugOverlay.cpp
+    Effects.cpp
     FieldRenderer.cpp
     FollowCamera.cpp
     Hud.cpp

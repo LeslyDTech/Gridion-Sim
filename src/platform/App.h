@@ -2,6 +2,7 @@
 
 #include "Assets.h"
 #include "DebugOverlay.h"
+#include "Effects.h"
 #include "FollowCamera.h"
 #include "InputDevice.h"
 #include "core/FixedTimestep.h"
@@ -42,6 +43,7 @@ private:
     FixedTimestep m_timestep;
     FollowCamera m_camera;
     DebugOverlay m_overlay;
+    Effects m_effects;
     FrameStats m_stats;
     int m_fpsCapIndex = 0;
     bool m_polish = true; // F2: all visual polish on/off, for before/after screenshots

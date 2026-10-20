@@ -4,6 +4,7 @@
 
 namespace gridiron {
 
+class Effects;
 class World;
 
 // Stateless drawing functions for everything on the field except the field itself
@@ -14,7 +15,7 @@ namespace render {
 // --- World space (between BeginMode2D / EndMode2D) ---
 void drawLineOfScrimmage(const World& world, const RenderContext& context);
 void drawRoutes(const World& world, const RenderContext& context);
-void drawPlayers(const World& world, const RenderContext& context);
+void drawPlayers(const World& world, const RenderContext& context, const Effects& effects);
 void drawBall(const World& world, const RenderContext& context);
 
 // --- Screen space (after EndMode2D) ---

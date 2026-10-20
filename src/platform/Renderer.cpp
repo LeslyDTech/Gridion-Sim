@@ -1,5 +1,6 @@
 #include "Renderer.h"
 
+#include "Effects.h"
 #include "FollowCamera.h"
 #include "Theme.h"
 #include "core/FieldGeometry.h"
@@ -7,6 +8,7 @@
 
 #include <raylib.h>
 
+#include <cmath>
 #include <cstdio>
 
 namespace gridiron::render {
@@ -19,6 +21,52 @@ Vec2 interpolated(const Player& player, float alpha) {
 }
 
 Color teamColor(Team team) { return team == Team::Offense ? theme::kHome : theme::kAway; }
+
+// A small white triangle on the edge of the circle, pointing where the player faces.
+void drawFacingIndicator(Vector2 center, float radius, Vec2 facing) {
+    const Vec2 side{-facing.y, facing.x};
+    const Vec2 c{center.x, center.y};
+    const Vec2 tip = c + facing * (radius + 0.22f);
+    const Vec2 left = c + facing * (radius - 0.04f) + side * 0.2f;
+    const Vec2 right = c + facing * (radius - 0.04f) - side * 0.2f;
+    // raylib only fills counter-clockwise triangles (as seen on screen); the screen's y axis
+    // points down, so (tip, right, left) is the counter-clockwise order.
+    DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), theme::kLineWhite);
+}
+
+void drawPolishedPlayer(const Player& player, Vector2 center, Vec2 facing, double time) {
+    const float radius = player.attributes.radius;
+    constexpr int kSegments = 32;
+
+    // Soft drop shadow, offset down-right as if lit from the top-left.
+    DrawCircleV(Vector2{center.x + 0.12f, center.y + 0.2f}, radius * 1.05f, theme::shadow(0.4f));
+
+    if (player.state == PlayerState::BallCarrier) {
+        const float pulse = 0.06f * static_cast<float>(std::sin(time * 6.0));
+        DrawRing(center, radius + 0.12f, radius + 0.34f + pulse, 0.0f, 360.0f, kSegments,
+                 Fade(theme::kAccent, 0.9f));
+    }
+
+    DrawCircleSector(center, radius, 0.0f, 360.0f, kSegments, teamColor(player.team));
+    DrawRing(center, radius - 0.09f, radius, 0.0f, 360.0f, kSegments, theme::kLineWhite);
+    drawFacingIndicator(center, radius, facing);
+
+    if (player.state == PlayerState::Tackled) {
+        DrawRing(center, radius + 0.1f, radius + 0.2f, 0.0f, 360.0f, kSegments, theme::kAccent);
+    }
+}
+
+void drawPlainPlayer(const Player& player, Vector2 center) {
+    const float radius = player.attributes.radius;
+    if (player.state == PlayerState::BallCarrier) {
+        DrawCircleV(center, radius + 0.3f, theme::kAccent);
+    }
+    DrawCircleV(center, radius, teamColor(player.team));
+    DrawCircleLinesV(center, radius, theme::kLineWhite);
+    if (player.state == PlayerState::Tackled) {
+        DrawCircleV(center, radius * 0.4f, theme::kAccent);
+    }
+}
 
 // Text centered on a screen point.
 void drawCenteredText(const char* text, Vector2 center, int fontSize, Color color) {
@@ -54,18 +102,13 @@ void drawRoutes(const World& world, const RenderContext& /*context*/) {
     }
 }
 
-void drawPlayers(const World& world, const RenderContext& context) {
+void drawPlayers(const World& world, const RenderContext& context, const Effects& effects) {
     for (const Player& player : world.players()) {
         const Vector2 center = toRaylib(interpolated(player, context.alpha));
-        const float radius = player.attributes.radius;
-
-        if (player.state == PlayerState::BallCarrier) {
-            DrawCircleV(center, radius + 0.3f, theme::kAccent);
-        }
-        DrawCircleV(center, radius, teamColor(player.team));
-        DrawCircleLinesV(center, radius, theme::kLineWhite);
-        if (player.state == PlayerState::Tackled) {
-            DrawCircleV(center, radius * 0.4f, theme::kAccent);
+        if (context.polish) {
+            drawPolishedPlayer(player, center, effects.facing(player.id), context.time);
+        } else {
+            drawPlainPlayer(player, center);
         }
     }
 }
