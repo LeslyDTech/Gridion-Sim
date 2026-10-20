@@ -164,6 +164,7 @@ void drawHud(const Game& game, const RenderContext& context) {
     const World& world = game.world();
     if (context.polish) {
         broadcast::drawPlayCallBanner(game, context.assets);
+        broadcast::drawPlaySelectPanel(game, context.assets);
         broadcast::drawScorebug(game, context.assets);
         broadcast::drawControlsBar(world, context.assets);
         return;
