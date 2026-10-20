@@ -85,6 +85,25 @@ TEST_CASE("Play selection: a number key chooses, Tab browses, a new play reopens
     CHECK_FALSE(game.selectingPlay()); // live play
 }
 
+TEST_CASE("Restart drive resets downs, score, spot and play selection", "[game]") {
+    Game game = makeGame();
+    InputCommands select;
+    select.selectPlay = 2;
+    game.step(select, kDt);
+    game.step(pressSnap(), kDt);
+    for (int i = 0; i < 60 * 20 && game.world().phase() != PlayPhase::Over; ++i) {
+        game.step(InputCommands{}, kDt);
+    }
+    REQUIRE(game.drive().down() == 2);
+
+    game.restartDrive();
+    CHECK(game.drive().down() == 1);
+    CHECK(game.lineOfScrimmageX() == Drive::kNewDriveLineX);
+    CHECK(game.world().phase() == PlayPhase::PreSnap);
+    CHECK(game.selectingPlay());
+    CHECK(game.playClockSeconds() == 40);
+}
+
 TEST_CASE("Out-of-range play selections are ignored", "[game]") {
     Game game = makeGame();
     InputCommands select;

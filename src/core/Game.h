@@ -4,12 +4,18 @@
 #include "PlayDefinition.h"
 #include "World.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace gridiron {
 
 // Where the next play starts, given how the last one ended (pure, so it is easy to test).
 Vec2 nextBallSpot(const PlayOutcome& outcome, Vec2 previousSpot);
+
+enum class GameMode : std::uint8_t {
+    Drive,    // score before turning it over on downs
+    Practice, // run any play, downs never run out
+};
 
 // The sequence of plays: sets up the World, runs the play clock, records the result in the
 // drive (down, distance, score) the moment a play ends, waits while the result is shown, then
@@ -21,7 +27,12 @@ public:
     static constexpr float kPlayClockSeconds = 40.0f; // NFL play clock after a play ends
 
     // Precondition: `playbook` is not empty.
-    Game(std::vector<PlayDefinition> playbook, PlayDefinition defense);
+    Game(std::vector<PlayDefinition> playbook, PlayDefinition defense,
+         GameMode mode = GameMode::Drive);
+
+    // Starts over: score, downs and play clock reset, ball at the own 25, play selection open.
+    void restartDrive();
+    GameMode mode() const { return m_mode; }
 
     void step(const InputCommands& input, float dt);
 
@@ -62,6 +73,7 @@ private:
     void onPlayEnded();
     void advanceToNextPlay();
 
+    GameMode m_mode;
     std::vector<PlayDefinition> m_playbook;
     PlayDefinition m_defense;
     std::size_t m_playIndex = 0;

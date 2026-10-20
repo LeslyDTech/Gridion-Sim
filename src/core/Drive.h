@@ -21,7 +21,11 @@ enum class DriveEvent : std::uint8_t {
 // drive starts at the offense's own 25.
 class Drive {
 public:
-    Drive() { startSeries(kNewDriveLineX); }
+    // `unlimitedDowns` (practice): failing on 4th down starts a new set of downs at the spot
+    // instead of turning the ball over.
+    explicit Drive(bool unlimitedDowns = false) : m_unlimitedDowns(unlimitedDowns) {
+        startSeries(kNewDriveLineX);
+    }
 
     // Applies a finished play. `nextLineOfScrimmageX` is where the ball will be spotted
     // (see nextBallSpot). Returns what happened so Game can reset the field if needed.
@@ -45,6 +49,7 @@ private:
     float m_firstDownLineX = 0.0f;
     int m_homeScore = 0;
     int m_awayScore = 0;
+    bool m_unlimitedDowns = false;
 };
 
 } // namespace gridiron

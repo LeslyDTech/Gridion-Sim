@@ -50,6 +50,16 @@ TEST_CASE("Failing on 4th down turns the ball over and starts a new drive", "[dr
     CHECK(drive.down() == 1);
 }
 
+TEST_CASE("Practice mode never turns the ball over on downs", "[drive]") {
+    Drive drive(true);
+    for (int i = 0; i < 3; ++i) {
+        drive.recordPlay(incomplete(), kStart + 2.0f);
+    }
+    CHECK(drive.recordPlay(incomplete(), kStart + 2.0f) == DriveEvent::None);
+    CHECK(drive.down() == 1);
+    CHECK(drive.yardsToGo(kStart + 2.0f) == 10); // new set of downs at the spot
+}
+
 TEST_CASE("Inside the 10 the line to gain is the goal line", "[drive]") {
     Drive drive;
     const float atThe6 = field::kOpponentGoalLine - 6.0f;

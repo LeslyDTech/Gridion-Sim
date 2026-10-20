@@ -46,6 +46,10 @@ DriveEvent Drive::recordPlay(const PlayOutcome& outcome, float nextLineOfScrimma
         return DriveEvent::FirstDown;
     }
     if (m_down == kMaxDowns) {
+        if (m_unlimitedDowns) {
+            startSeries(nextLineOfScrimmageX); // practice: keep going from the spot
+            return DriveEvent::None;
+        }
         startSeries(kNewDriveLineX);
         return DriveEvent::TurnoverOnDowns;
     }

@@ -34,10 +34,21 @@ Vec2 nextBallSpot(const PlayOutcome& outcome, Vec2 previousSpot) {
     return previousSpot;
 }
 
-Game::Game(std::vector<PlayDefinition> playbook, PlayDefinition defense)
-    : m_playbook(std::move(playbook)), m_defense(std::move(defense)),
-      m_ballSpot{field::kStartingLineOfScrimmageX, field::kCenterY} {
+Game::Game(std::vector<PlayDefinition> playbook, PlayDefinition defense, GameMode mode)
+    : m_mode(mode), m_playbook(std::move(playbook)), m_defense(std::move(defense)),
+      m_ballSpot{field::kStartingLineOfScrimmageX, field::kCenterY},
+      m_drive(mode == GameMode::Practice) {
     assert(!m_playbook.empty() && "Game needs at least one play");
+    setupPlay();
+}
+
+void Game::restartDrive() {
+    m_drive = Drive(m_mode == GameMode::Practice);
+    m_ballSpot = {field::kStartingLineOfScrimmageX, field::kCenterY};
+    m_playClock = kPlayClockSeconds;
+    m_playChosen = false;
+    m_lastDriveEvent = DriveEvent::None;
+    m_playsRun = 0;
     setupPlay();
 }
 
