@@ -112,6 +112,12 @@ void fillClippedToRounded(Rectangle parent, float radius, Rectangle child, Color
 float screenWidth() { return static_cast<float>(GetScreenWidth()); }
 float screenHeight() { return static_cast<float>(GetScreenHeight()); }
 
+constexpr float kFigmaFrameHeight = 720.0f;
+
+float centeredTop(float figmaTop) { return figmaTop + (screenHeight() - kFigmaFrameHeight) / 2.0f; }
+
+float bottomAnchoredTop(float figmaTop) { return figmaTop + (screenHeight() - kFigmaFrameHeight); }
+
 void toUpper(const char* text, char* out, std::size_t size) {
     std::size_t i = 0;
     for (; text[i] != '\0' && i + 1 < size; ++i) {

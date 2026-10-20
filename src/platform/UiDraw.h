@@ -54,6 +54,12 @@ void fillClippedToRounded(Rectangle parent, float radius, Rectangle child, Color
 float screenWidth();
 float screenHeight();
 
+// Figma frames are 1280 x 720. For a group anchored to the vertical center, the Figma `top`
+// shifted by half of the extra (or missing) window height.
+float centeredTop(float figmaTop);
+// For a group anchored to the bottom edge.
+float bottomAnchoredTop(float figmaTop);
+
 // Copies `text` into `out` in upper case (ASCII), as Figma's "uppercase" text style does.
 void toUpper(const char* text, char* out, std::size_t size);
 

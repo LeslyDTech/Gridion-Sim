@@ -1,8 +1,7 @@
 #include "App.h"
 
-#include "GameScene.h"
+#include "LoadingScene.h"
 #include "Theme.h"
-#include "core/PlayLoader.h"
 
 #include <raylib.h>
 
@@ -41,7 +40,7 @@ AudioDevice::~AudioDevice() { CloseAudioDevice(); }
 App::App()
     : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"),
       m_settingsPath(applicationDirectory() / "settings.json"),
-      m_settings(loadSettings(m_settingsPath)), m_assets(applicationDirectory() / "assets"),
+      m_settings(loadSettings(m_settingsPath)),
       m_context{m_assets, m_input, m_scenes, m_overlay, m_settings, m_settingsPath} {
     SetTargetFPS(kFpsCaps[0]);
     applySettings();
@@ -49,15 +48,9 @@ App::App()
         m_overlay.toggle();
     }
 
-    Playbook offense = loadPlaysFromDirectory(applicationDirectory() / "data" / "plays");
-    Playbook defense = loadPlaysFromDirectory(applicationDirectory() / "data" / "defense");
-    if (offense.plays.empty() || defense.plays.empty()) {
-        m_loadError = "Could not load plays from " + (applicationDirectory() / "data").string();
-        return;
-    }
-    m_context.playbook = std::move(offense.plays);
-    m_context.defense = std::move(defense.plays.front());
-    m_scenes.reset(std::make_unique<GameScene>(m_context, GameMode::Drive), true);
+    // Only the loading screen's own fonts load up front; LoadingScene streams in the rest.
+    m_assets.loadBootFonts(applicationDirectory() / "assets");
+    m_scenes.reset(std::make_unique<LoadingScene>(m_context), true);
 }
 
 App::~App() {
@@ -103,10 +96,6 @@ void App::handleAppCommands() {
 void App::drawFrame() {
     BeginDrawing();
     ClearBackground(theme::kUiDark);
-    if (!m_loadError.empty()) {
-        DrawText("Failed to load play data", 40, 40, 32, theme::kAway);
-        DrawText(m_loadError.c_str(), 40, 100, 20, theme::kLineWhite);
-    }
     m_scenes.draw();
     m_overlay.drawStats(m_assets,
                         OverlaySettings{m_context.fpsCap, m_context.polish, m_context.playerCount});

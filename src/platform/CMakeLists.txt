@@ -2,6 +2,8 @@
 add_executable(gridiron
     main.cpp
     App.cpp
+    AssetDecode.cpp
+    AssetLoader.cpp
     Assets.cpp
     BroadcastHud.cpp
     DebugOverlay.cpp
@@ -11,6 +13,7 @@ add_executable(gridiron
     GameScene.cpp
     Hud.cpp
     InputDevice.cpp
+    LoadingScene.cpp
     MenuWidgets.cpp
     PauseScene.cpp
     Renderer.cpp

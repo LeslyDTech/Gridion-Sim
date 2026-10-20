@@ -55,7 +55,6 @@ private:
     SceneManager m_scenes;
     AppContext m_context;
     int m_fpsCapIndex = 0;
-    std::string m_loadError;
 };
 
 } // namespace gridiron
