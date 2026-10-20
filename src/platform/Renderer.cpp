@@ -40,9 +40,9 @@ void drawFacingIndicator(Vector2 center, float radius, Vec2 facing) {
 // --- Sprite art (Kenney Sports Pack) ---------------------------------------------------------
 
 // Player sprites are 21 x 31 px and face +x; the 31 px axis is the shoulders. The shoulders are
-// drawn 2.6x the collision radius wide, a little wider than the collision circle (as real
-// shoulders are) without hiding how close players actually are.
-constexpr float kSpriteShoulderToRadius = 2.6f;
+// drawn 2.08x the collision radius wide: slightly wider than the collision circle (as real
+// shoulders are), and small enough that linemen with 1-yard splits never visually overlap.
+constexpr float kSpriteShoulderToRadius = 2.08f;
 // The ball sprite's long axis is drawn at ~55 degrees (measured from its pixels), so that angle
 // is subtracted to line the ball up with its direction of travel.
 constexpr float kBallSpriteAxisDegrees = 54.7f;

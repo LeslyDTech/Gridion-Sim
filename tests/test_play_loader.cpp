@@ -19,21 +19,21 @@ std::string makeOffense(const std::string& special,
         { "slot": "QB", "role": "QB", "jersey": 12, "x": -5, "y": 0, "assignment": "none" },
         { "slot": "WR1", "role": "WR", "jersey": 11, "x": -1, "y": -18, "assignment": "route",
           "route": [[5, 0], [10, 5]] },
-        { "slot": "O1", "role": "OL", "jersey": 61, "x": -1, "y": 1, "assignment": "block" },
-        { "slot": "O2", "role": "OL", "jersey": 62, "x": -1, "y": 2, "assignment": "block" },
-        { "slot": "O3", "role": "OL", "jersey": 63, "x": -1, "y": 3, "assignment": "block" },
-        { "slot": "O4", "role": "OL", "jersey": 64, "x": -1, "y": 4, "assignment": "block" },
-        { "slot": "O5", "role": "OL", "jersey": 65, "x": -1, "y": 5, "assignment": "block" },
-        { "slot": "O6", "role": "OL", "jersey": 66, "x": -1, "y": 6, "assignment": "block" },
-        { "slot": "O7", "role": "OL", "jersey": 67, "x": -1, "y": 7, "assignment": "block" },
-        { "slot": "O8", "role": "OL", "jersey": 68, "x": -1, "y": 8, "assignment": "block" },
+        { "slot": "O1", "role": "OL", "jersey": 61, "x": -1, "y": 2, "assignment": "block" },
+        { "slot": "O2", "role": "OL", "jersey": 62, "x": -1, "y": 4, "assignment": "block" },
+        { "slot": "O3", "role": "OL", "jersey": 63, "x": -1, "y": 6, "assignment": "block" },
+        { "slot": "O4", "role": "OL", "jersey": 64, "x": -1, "y": 8, "assignment": "block" },
+        { "slot": "O5", "role": "OL", "jersey": 65, "x": -1, "y": 10, "assignment": "block" },
+        { "slot": "O6", "role": "OL", "jersey": 66, "x": -1, "y": 12, "assignment": "block" },
+        { "slot": "O7", "role": "OL", "jersey": 67, "x": -1, "y": 14, "assignment": "block" },
+        { "slot": "O8", "role": "OL", "jersey": 68, "x": -1, "y": 16, "assignment": "block" },
         )" +
            special + R"(
       ] })";
 }
 
 const std::string kLineman =
-    R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": -1, "y": 9, "assignment": "block" })";
+    R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": -1, "y": 18, "assignment": "block" })";
 
 } // namespace
 
@@ -73,27 +73,27 @@ TEST_CASE("parsePlay requires exactly 11 players", "[loader]") {
 TEST_CASE("parsePlay names the field that is wrong", "[loader]") {
     SECTION("missing field") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O9", "role": "OL", "x": -1, "y": 9, "assignment": "block" })"));
+            R"({ "slot": "O9", "role": "OL", "x": -1, "y": 18, "assignment": "block" })"));
         CHECK_THAT(result.error, ContainsSubstring("players[10].jersey: missing"));
     }
     SECTION("wrong type") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O9", "role": "OL", "jersey": "69", "x": -1, "y": 9, "assignment": "block" })"));
+            R"({ "slot": "O9", "role": "OL", "jersey": "69", "x": -1, "y": 18, "assignment": "block" })"));
         CHECK_THAT(result.error, ContainsSubstring("players[10].jersey: expected an integer"));
     }
     SECTION("unknown enum value") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": -1, "y": 9, "assignment": "dance" })"));
+            R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": -1, "y": 18, "assignment": "dance" })"));
         CHECK_THAT(result.error, ContainsSubstring("unknown value 'dance'"));
     }
     SECTION("route runner without a route") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "WR9", "role": "WR", "jersey": 19, "x": -1, "y": 9, "assignment": "route" })"));
+            R"({ "slot": "WR9", "role": "WR", "jersey": 19, "x": -1, "y": 18, "assignment": "route" })"));
         CHECK_THAT(result.error, ContainsSubstring("players[10].route: missing"));
     }
     SECTION("malformed waypoint") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "WR9", "role": "WR", "jersey": 19, "x": -1, "y": 9, "assignment": "route",
+            R"({ "slot": "WR9", "role": "WR", "jersey": 19, "x": -1, "y": 18, "assignment": "route",
                  "route": [[5, 0], [5]] })"));
         CHECK_THAT(result.error, ContainsSubstring("players[10].route[1]: expected a point"));
     }
@@ -102,17 +102,23 @@ TEST_CASE("parsePlay names the field that is wrong", "[loader]") {
 TEST_CASE("parsePlay enforces football rules", "[loader]") {
     SECTION("duplicate slot") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O1", "role": "OL", "jersey": 69, "x": -1, "y": 9, "assignment": "block" })"));
+            R"({ "slot": "O1", "role": "OL", "jersey": 69, "x": -1, "y": 18, "assignment": "block" })"));
         CHECK_THAT(result.error, ContainsSubstring("duplicate slot 'O1'"));
     }
     SECTION("offside") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": 2, "y": 9, "assignment": "block" })"));
+            R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": 2, "y": 18, "assignment": "block" })"));
         CHECK_THAT(result.error, ContainsSubstring("offside"));
+    }
+    SECTION("overlapping players") {
+        // O8 is at (-1, 16); a lineman half a yard away overlaps it (radii 0.65 + 0.65).
+        const auto result = parsePlay(makeOffense(
+            R"({ "slot": "O9", "role": "OL", "jersey": 69, "x": -1, "y": 16.5, "assignment": "block" })"));
+        CHECK_THAT(result.error, ContainsSubstring("'O9' overlaps 'O8'"));
     }
     SECTION("defensive role on offense") {
         const auto result = parsePlay(makeOffense(
-            R"({ "slot": "O9", "role": "CB", "jersey": 69, "x": -1, "y": 9, "assignment": "block" })"));
+            R"({ "slot": "O9", "role": "CB", "jersey": 69, "x": -1, "y": 18, "assignment": "block" })"));
         CHECK_THAT(result.error, ContainsSubstring("does not belong"));
     }
     SECTION("ball carrier must exist") {

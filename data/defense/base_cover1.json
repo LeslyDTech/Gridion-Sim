@@ -2,14 +2,14 @@
   "name": "4-3 Cover 1",
   "side": "defense",
   "players": [
-    { "slot": "LE",  "role": "DL", "jersey": 91, "x": 0.9, "y": -4.5, "assignment": "rush" },
-    { "slot": "LDT", "role": "DL", "jersey": 97, "x": 0.9, "y": -1.6, "assignment": "rush" },
-    { "slot": "RDT", "role": "DL", "jersey": 95, "x": 0.9, "y": 1.6,  "assignment": "rush" },
-    { "slot": "RE",  "role": "DL", "jersey": 99, "x": 0.9, "y": 4.5,  "assignment": "rush" },
+    { "slot": "LE",  "role": "DL", "jersey": 91, "x": 0.9, "y": -5.5, "assignment": "rush" },
+    { "slot": "LDT", "role": "DL", "jersey": 97, "x": 0.9, "y": -1.15, "assignment": "rush" },
+    { "slot": "RDT", "role": "DL", "jersey": 95, "x": 0.9, "y": 1.15,  "assignment": "rush" },
+    { "slot": "RE",  "role": "DL", "jersey": 99, "x": 0.9, "y": 5.5,  "assignment": "rush" },
 
-    { "slot": "WLB", "role": "LB", "jersey": 54, "x": 5.0, "y": -4.0, "assignment": "man", "cover": "HB" },
+    { "slot": "WLB", "role": "LB", "jersey": 54, "x": 5.0, "y": -4.5, "assignment": "man", "cover": "HB" },
     { "slot": "MLB", "role": "LB", "jersey": 50, "x": 5.0, "y": 0.0,  "assignment": "pursue" },
-    { "slot": "SLB", "role": "LB", "jersey": 56, "x": 5.0, "y": 4.0,  "assignment": "man", "cover": "TE" },
+    { "slot": "SLB", "role": "LB", "jersey": 56, "x": 5.0, "y": 4.5,  "assignment": "man", "cover": "TE" },
 
     { "slot": "CB1", "role": "CB", "jersey": 24, "x": 6.0, "y": -18.0, "assignment": "man", "cover": "WR1" },
     { "slot": "CB2", "role": "CB", "jersey": 21, "x": 6.0, "y": 17.0,  "assignment": "man", "cover": "WR2" },

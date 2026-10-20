@@ -5,7 +5,7 @@
   "players": [
     { "slot": "WR1", "role": "WR", "jersey": 11, "x": -1.0, "y": -18.0, "assignment": "route",
       "route": [[10.0, 0.0], [16.0, 12.0], [20.0, 26.0]] },
-    { "slot": "TE", "role": "TE", "jersey": 87, "x": -1.0, "y": 4.5, "assignment": "route",
+    { "slot": "TE", "role": "TE", "jersey": 87, "x": -1.0, "y": 6.9, "assignment": "route",
       "route": [[2.0, 0.0], [3.0, 8.0], [4.0, 16.0]] },
     { "slot": "WR2", "role": "WR", "jersey": 84, "x": -1.0, "y": 17.0, "assignment": "route",
       "route": [[14.0, 0.0], [20.0, -4.0]] },
@@ -14,10 +14,10 @@
 
     { "slot": "HB", "role": "HB", "jersey": 28, "x": -7.0, "y": 0.0, "assignment": "block" },
     { "slot": "QB", "role": "QB", "jersey": 12, "x": -2.0, "y": 0.0, "assignment": "none" },
-    { "slot": "LT", "role": "OL", "jersey": 76, "x": -0.7, "y": -3.0, "assignment": "block" },
-    { "slot": "LG", "role": "OL", "jersey": 66, "x": -0.7, "y": -1.5, "assignment": "block" },
+    { "slot": "LT", "role": "OL", "jersey": 76, "x": -0.7, "y": -4.6, "assignment": "block" },
+    { "slot": "LG", "role": "OL", "jersey": 66, "x": -0.7, "y": -2.3, "assignment": "block" },
     { "slot": "C",  "role": "OL", "jersey": 55, "x": -0.7, "y": 0.0,  "assignment": "block" },
-    { "slot": "RG", "role": "OL", "jersey": 64, "x": -0.7, "y": 1.5,  "assignment": "block" },
-    { "slot": "RT", "role": "OL", "jersey": 71, "x": -0.7, "y": 3.0,  "assignment": "block" }
+    { "slot": "RG", "role": "OL", "jersey": 64, "x": -0.7, "y": 2.3,  "assignment": "block" },
+    { "slot": "RT", "role": "OL", "jersey": 71, "x": -0.7, "y": 4.6,  "assignment": "block" }
   ]
 }

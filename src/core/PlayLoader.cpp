@@ -165,6 +165,23 @@ void validateUniqueSlots(const std::vector<SlotDefinition>& players) {
     }
 }
 
+// No two players may line up overlapping: their collision circles (radius by role, see
+// attributesFor) must not intersect. This keeps spacing decisions in the formation data and stops
+// a formation from starting with players pushing each other apart at the snap.
+void validateNoOverlap(const std::vector<SlotDefinition>& players) {
+    for (std::size_t i = 0; i < players.size(); ++i) {
+        for (std::size_t j = i + 1; j < players.size(); ++j) {
+            const float minDistance =
+                attributesFor(players[i].role).radius + attributesFor(players[j].role).radius;
+            if (distanceSquared(players[i].alignment, players[j].alignment) <
+                minDistance * minDistance) {
+                fail("players[" + std::to_string(j) + "]",
+                     "'" + players[j].slot + "' overlaps '" + players[i].slot + "'");
+            }
+        }
+    }
+}
+
 bool hasSlot(const std::vector<SlotDefinition>& players, const std::string& name) {
     return std::any_of(players.begin(), players.end(),
                        [&](const SlotDefinition& p) { return p.slot == name; });
@@ -192,6 +209,7 @@ PlayDefinition readPlay(const json& root) {
             readSlot(players[i], play.side, "players[" + std::to_string(i) + "]"));
     }
     validateUniqueSlots(play.players);
+    validateNoOverlap(play.players);
 
     if (play.side == Team::Offense) {
         play.ballCarrierSlot = readString(root, "ballCarrier", "");
