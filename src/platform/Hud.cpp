@@ -103,11 +103,12 @@ void drawResultBanner(const PlayOutcome& outcome) {
 
 } // namespace
 
-void drawHud(const Game& game, const RenderContext& /*context*/) {
+void drawHud(const Game& game, const RenderContext& context) {
     const World& world = game.world();
     drawPlayCall(game);
     drawControlsHelp(world);
-    if (world.phase() == PlayPhase::Over) {
+    // With polish on, the animated "+N YDS" popup (Effects) replaces the plain banner.
+    if (!context.polish && world.phase() == PlayPhase::Over) {
         drawResultBanner(world.outcome());
     }
 }

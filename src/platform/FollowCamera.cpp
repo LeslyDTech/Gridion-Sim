@@ -25,16 +25,21 @@ float clampAxis(float center, float halfView, float fieldSize) {
 
 } // namespace
 
-FollowCamera::FollowCamera(float pixelsPerYard) { m_camera.zoom = pixelsPerYard; }
-
-void FollowCamera::snapTo(Vec2 focus, int screenWidth, int screenHeight) {
-    apply(clampToField(focus, screenWidth, screenHeight), screenWidth, screenHeight);
+FollowCamera::FollowCamera(float pixelsPerYard) : m_baseZoom(pixelsPerYard) {
+    m_camera.zoom = pixelsPerYard;
 }
 
-void FollowCamera::follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight) {
+void FollowCamera::snapTo(Vec2 focus, int screenWidth, int screenHeight) {
+    apply(clampToField(focus, screenWidth, screenHeight), {}, screenWidth, screenHeight);
+}
+
+void FollowCamera::follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight,
+                          float zoomFactor, Vec2 shake) {
+    // Zoom is already smoothed by the caller (Effects), so apply it directly.
+    m_camera.zoom = m_baseZoom * zoomFactor;
     const float t = 1.0f - std::exp(-kFollowSharpness * frameSeconds);
     const Vec2 target = clampToField(focus, screenWidth, screenHeight);
-    apply(lerp(m_center, target, t), screenWidth, screenHeight);
+    apply(lerp(m_center, target, t), shake, screenWidth, screenHeight);
 }
 
 Vector2 FollowCamera::worldToScreen(Vec2 world) const {
@@ -48,9 +53,10 @@ Vec2 FollowCamera::clampToField(Vec2 center, int screenWidth, int screenHeight) 
             clampAxis(center.y, halfViewY, field::kWidth)};
 }
 
-void FollowCamera::apply(Vec2 center, int screenWidth, int screenHeight) {
+void FollowCamera::apply(Vec2 center, Vec2 shake, int screenWidth, int screenHeight) {
     m_center = center;
-    m_camera.target = Vector2{center.x, center.y};
+    const Vec2 shaken = center + shake;
+    m_camera.target = Vector2{shaken.x, shaken.y};
     m_camera.offset =
         Vector2{static_cast<float>(screenWidth) / 2.0f, static_cast<float>(screenHeight) / 2.0f};
 }

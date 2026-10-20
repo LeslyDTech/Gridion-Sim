@@ -127,13 +127,14 @@ void App::render(float alpha, float frameSeconds) {
     // Follow the ball where it is *drawn* (interpolated), so the camera never jitters
     // against the players.
     const Ball& ball = world.ball();
+    m_effects.update(world, frameSeconds);
     m_camera.follow(lerp(ball.previousPosition, ball.position, alpha), frameSeconds,
-                    GetScreenWidth(), GetScreenHeight());
+                    GetScreenWidth(), GetScreenHeight(), m_polish ? m_effects.zoomFactor() : 1.0f,
+                    m_polish ? m_effects.shakeOffset() : Vec2{});
 
     BeginDrawing();
     ClearBackground(theme::kUiDark);
 
-    m_effects.update(world, frameSeconds);
     const RenderContext context{m_camera, m_assets, alpha, m_polish, GetTime()};
 
     BeginMode2D(m_camera.raylibCamera());
@@ -141,12 +142,18 @@ void App::render(float alpha, float frameSeconds) {
     render::drawLineOfScrimmage(world, context);
     m_overlay.drawGrid(world.spatialHash());
     render::drawRoutes(world, context, m_effects.routeOpacity());
+    if (m_polish) {
+        m_effects.drawParticles();
+    }
     render::drawPlayers(world, context, m_effects);
     render::drawBall(world, context);
     EndMode2D();
 
     render::drawVignette(context);
     render::drawPlayerLabels(world, context, m_overlay.enabled());
+    if (m_polish) {
+        m_effects.drawResultPopup(context);
+    }
     render::drawHud(*m_game, context);
 
     const int players = static_cast<int>(world.players().size());

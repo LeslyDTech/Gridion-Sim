@@ -17,7 +17,10 @@ public:
     void snapTo(Vec2 focus, int screenWidth, int screenHeight);
 
     // Ease toward focus. Called once per rendered frame with the real frame time.
-    void follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight);
+    //   zoomFactor: 1 = normal, < 1 = zoomed out (deep passes).
+    //   shake:      offset in yards added after clamping, so shake works at the field edges too.
+    void follow(Vec2 focus, float frameSeconds, int screenWidth, int screenHeight,
+                float zoomFactor = 1.0f, Vec2 shake = {});
 
     const Camera2D& raylibCamera() const { return m_camera; }
 
@@ -27,9 +30,10 @@ public:
 
 private:
     Vec2 clampToField(Vec2 center, int screenWidth, int screenHeight) const;
-    void apply(Vec2 center, int screenWidth, int screenHeight);
+    void apply(Vec2 center, Vec2 shake, int screenWidth, int screenHeight);
 
     Camera2D m_camera{};
+    float m_baseZoom;
     Vec2 m_center;
 };
 

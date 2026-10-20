@@ -86,8 +86,8 @@ void drawCurvedRoute(const Player& player, Color color) {
         }
         const Vec2 next = player.route[i + 1];
         // Round the cut, but never use more than 40% of either adjoining leg.
-        const float radius = std::min({kMaxCornerRadius, 0.4f * distance(previous, corner),
-                                       0.4f * distance(corner, next)});
+        const float radius = std::min(
+            {kMaxCornerRadius, 0.4f * distance(previous, corner), 0.4f * distance(corner, next)});
         const Vec2 entry = corner - normalized(corner - previous) * radius;
         const Vec2 exit = corner + normalized(next - corner) * radius;
         DrawLineEx(toRaylib(legStart), toRaylib(entry), kThickness, color);
@@ -168,17 +168,35 @@ void drawPlayers(const World& world, const RenderContext& context, const Effects
 void drawBall(const World& world, const RenderContext& context) {
     const Ball& ball = world.ball();
     const Vec2 ground = lerp(ball.previousPosition, ball.position, context.alpha);
-    if (ball.state == BallState::InAir) {
-        // Shadow stays on the ground; the ball itself is lifted by its flight height.
-        DrawCircleV(toRaylib(ground), 0.25f, theme::shadow());
-        const Vec2 lifted = ground - Vec2{0.0f, ball.height()};
-        DrawCircleV(toRaylib(lifted), 0.3f, theme::kUiDark);
-        DrawCircleLinesV(toRaylib(lifted), 0.3f, theme::kLineWhite);
-    } else if (ball.state == BallState::Spotted || ball.state == BallState::Dead) {
+    if (ball.state == BallState::Held) {
+        return; // the gold carrier ring shows who has it
+    }
+    if (ball.state != BallState::InAir) {
         DrawCircleV(toRaylib(ground), 0.3f, theme::kUiDark);
         DrawCircleLinesV(toRaylib(ground), 0.3f, theme::kLineWhite);
+        return;
     }
-    // While Held, the gold carrier ring shows who has it.
+
+    // In the air the ball is drawn lifted by its arc height, above a shadow on the ground.
+    const float height = ball.height();
+    const Vec2 lifted = ground - Vec2{0.0f, height};
+    if (!context.polish) {
+        DrawCircleV(toRaylib(ground), 0.25f, theme::shadow());
+        DrawCircleV(toRaylib(lifted), 0.3f, theme::kUiDark);
+        DrawCircleLinesV(toRaylib(lifted), 0.3f, theme::kLineWhite);
+        return;
+    }
+    // Higher ball: smaller, fainter shadow and a slightly bigger ball (closer to the camera).
+    const float rise = std::clamp(height / 4.0f, 0.0f, 1.0f);
+    DrawCircleV(toRaylib(ground), 0.32f * (1.0f - 0.45f * rise),
+                theme::shadow(0.45f - 0.25f * rise));
+    const float radius = 0.3f * (1.0f + 0.35f * rise);
+    DrawCircleV(toRaylib(lifted), radius, theme::kUiDark);
+    DrawRing(toRaylib(lifted), radius - 0.06f, radius, 0.0f, 360.0f, 20, theme::kLineWhite);
+    // Laces, perpendicular to the direction of flight.
+    const Vec2 dir = normalized(ball.target - ball.launch);
+    const Vec2 lace{-dir.y * radius * 0.5f, dir.x * radius * 0.5f};
+    DrawLineEx(toRaylib(lifted - lace), toRaylib(lifted + lace), 0.05f, theme::kLineWhite);
 }
 
 // ================================================================ screen space
