@@ -57,10 +57,28 @@ ctest --test-dir build --output-on-failure
 | Move the ball carrier | Arrow keys / WASD | Left stick |
 | Skip the result screen | Space | A |
 | Debug view: grid, collision checks, player states | F1 | Back / View |
+| Visual polish on/off (before/after comparison) | F2 | – |
 | Cycle the render FPS cap (144 / 60 / 30 / 240 / uncapped) | F3 | – |
 
-Receivers show their throw button in a yellow badge. Before the snap, every route is drawn on the
-field.
+Receivers show their throw button in a gold badge. Before the snap every route is drawn on the
+field, and the overlay fades out after the snap.
+
+## Presentation
+
+All visual polish lives in `src/platform`. F2 turns it off to show the plain Milestone 1 look:
+
+- One 7-color palette (`Theme.h`). Every color on screen is one of those 7 or a faded or
+  brightened variant.
+- Mowing stripes, team-colored end zones with team names, painted yard numbers with direction
+  arrows, hash marks, and a vignette.
+- Players with drop shadows, white outlines, facing indicators, and a pulsing ring on the ball
+  carrier.
+- A playbook overlay: routes drawn with rounded cuts and arrowheads.
+- Camera zoom-out on deep passes, screen shake and grass particles on tackles (from a fixed
+  256-particle pool, no per-frame allocations), a ball arc with a ground shadow that shrinks as
+  the ball rises, and an eased "+N YDS" popup.
+- A broadcast scorebug with score, down & distance, ball spot and play clock, in Bebas Neue
+  (SIL Open Font License, `assets/fonts/OFL.txt`).
 
 ## Architecture
 
@@ -68,6 +86,7 @@ field.
 src/core      gridiron_core: static library, pure C++17, no raylib
   World         one play: 22 Players + Ball, stepped at a fixed 60 Hz
   Game          play sequence: setup -> live -> result -> spot the ball -> next play
+  Drive         down & distance, first downs, turnovers on downs, score
   PlayerState   enum state machine + nextState() transition function
   PlayerAi      steering behaviors per state (pursue, cover, block)
   Route         pure waypoint-following math
@@ -76,10 +95,16 @@ src/core      gridiron_core: static library, pure C++17, no raylib
 src/platform  gridiron: the executable, the only code that includes raylib
   App           window, main loop, fixed-timestep driver
   InputDevice   keyboard + gamepad -> InputCommands
-  Renderer      field, players and HUD, interpolated between simulation steps
-  FollowCamera  smoothed camera clamped to the field
+  FieldRenderer turf, end zones, lines, painted numbers, vignette
+  Renderer      players, ball, routes, labels, interpolated between simulation steps
+  Hud           play call, scorebug, controls help
+  Effects       presentation-only state: facing, particles, shake, zoom, popup, play clock
+  FollowCamera  smoothed camera clamped to the field, zoom, shake, HUD-aware framing
+  Assets        RAII owner of the TTF font and vignette texture
+  Theme         the 7-color palette
 tests/        Catch2, links gridiron_core only
 data/         plays/*.json and defense/*.json
+assets/       fonts (copied next to the executable by the build)
 ```
 
 The full design, trade-offs and roadmap are in [docs/DESIGN.md](docs/DESIGN.md).

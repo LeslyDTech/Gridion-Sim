@@ -16,7 +16,8 @@
 **Non-goals (for now)**
 
 - Realistic physics (mass, momentum transfer, broken tackles) or a ratings system.
-- Downs, score, clock, penalties, special teams.
+- Game clock, penalties, special teams, playing defense. Downs and score are tracked by
+  `Drive`; after a score or a turnover on downs the offense simply starts a new drive.
 - Networked play, replays, audio, art beyond simple shapes.
 - Multithreading. 22 agents cost about 0.01 ms per step, so threads would add synchronization
   complexity and nondeterminism with nothing to gain at this scale.
@@ -120,6 +121,22 @@ defender is a tackle. With 22 players this typically produces 40–90 candidate 
 touchdown, safety, incomplete, plus yards and spot). `Game` holds the result screen for 2.5 s,
 then computes the next spot with the pure `nextBallSpot()`: tackled spots go between the hashes,
 and touchdowns and safeties restart at the 25. It then sets up the next play in the playbook.
+
+### Drive (`Drive`)
+Down, distance, first-down line and score. `Game` reports every finished play to it. Reaching the
+line to gain resets to 1st & 10, inside the opponent's 10 it becomes "& Goal", failing on 4th
+down is a turnover, touchdowns score 7 (the extra point is assumed) and safeties score 2. These
+are rules, so they live in core and are unit-tested, not in the HUD.
+
+### Presentation layer (`Effects`, `Hud`, `FieldRenderer`, `Theme`)
+The renderer never changes the simulation. Effects that react to game events, such as shake and
+particles on a tackle or the "+N YDS" popup, are driven by `Effects::update()`, which watches the
+const `World` once per rendered frame and detects transitions (for example `Live → Over` with a
+`Tackled` outcome). The core needs no callbacks or event queue for presentation, and the
+simulation stays deterministic. Particles come from a fixed 256-slot ring buffer, and every
+effect is time-based, so it looks the same at any frame rate. F2 switches all of it off for
+before/after comparisons. The camera centers the field in the area above the scorebug, so the
+HUD never hides a player.
 
 ## 4. Key trade-offs
 
