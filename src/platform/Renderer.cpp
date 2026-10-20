@@ -48,10 +48,10 @@ constexpr float kSpriteShoulderToRadius = 2.08f;
 constexpr float kBallSpriteAxisDegrees = 54.7f;
 constexpr float kBallYardsPerPixel = 0.05f; // 14 x 16 px -> 0.7 x 0.8 yards
 
-// Player shadows: a soft round shadow 70% of the sprite's size at 25% opacity, offset 2.5 px
-// down-right as if lit from the top-left. The offset is in screen pixels, so it looks the same at
-// every camera zoom.
-constexpr float kShadowSizeOfSprite = 0.7f;
+// Player shadows: a soft round shadow slightly larger than the sprite (at 70% it was hidden under
+// it) at 25% opacity, offset 2.5 px down-right as if lit from the top-left. The offset is in
+// screen pixels, so it looks the same at every camera zoom.
+constexpr float kShadowSizeOfSprite = 1.05f;
 constexpr float kShadowOpacity = 0.25f;
 constexpr float kShadowOffsetPixels = 2.5f;
 
