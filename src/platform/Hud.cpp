@@ -2,6 +2,7 @@
 
 #include "Assets.h"
 #include "DebugOverlay.h"
+#include "Text.h"
 #include "Theme.h"
 #include "core/FieldGeometry.h"
 #include "core/Game.h"
@@ -103,15 +104,19 @@ void drawCenteredText(const char* text, Vector2 center, int fontSize, Color colo
              static_cast<int>(center.y) - fontSize / 2, fontSize, color);
 }
 
-void drawControlsHelp(const World& world) {
+// `font` is the TTF with polish on, or nullptr for raylib's default font (plain mode).
+void drawControlsHelp(const World& world, const Font* font) {
     const int screenWidth = GetScreenWidth();
     const int screenHeight = GetScreenHeight();
     DrawRectangle(0, screenHeight - kHelpBarHeight, screenWidth, kHelpBarHeight,
                   theme::panel(0.6f));
-    drawCenteredText(controlsHelp(world),
-                     Vector2{static_cast<float>(screenWidth) / 2.0f,
-                             static_cast<float>(screenHeight - kHelpBarHeight / 2)},
-                     18, theme::kLineWhite);
+    const Vector2 center{static_cast<float>(screenWidth) / 2.0f,
+                         static_cast<float>(screenHeight - kHelpBarHeight / 2)};
+    if (font != nullptr) {
+        text::drawCentered(*font, controlsHelp(world), center, 22.0f, theme::kLineWhite);
+    } else {
+        drawCenteredText(controlsHelp(world), center, 18, theme::kLineWhite);
+    }
 }
 
 // ---------------------------------------------------------------- plain HUD (polish off)
@@ -255,7 +260,7 @@ void drawHud(const Game& game, const RenderContext& context, int playClockSecond
             drawResultBanner(world.outcome()); // polish uses the animated popup instead
         }
     }
-    drawControlsHelp(world);
+    drawControlsHelp(world, context.polish ? &context.assets.font() : nullptr);
 }
 
 } // namespace gridiron::render

@@ -3,6 +3,7 @@
 #include "Assets.h"
 #include "Effects.h"
 #include "FollowCamera.h"
+#include "Text.h"
 #include "Theme.h"
 #include "core/FieldGeometry.h"
 #include "core/World.h"
@@ -202,18 +203,27 @@ bool showJerseyNumber(const Player& player, const RenderContext& context, bool d
 void drawCenteredText(const char* text, Vector2 center, int fontSize, Color color);
 
 // Inside the circle, or under the sprite (the sprite's head would be covered otherwise), with a
-// dark shadow so it reads on the bright grass.
-void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard, bool sprites) {
-    char text[4];
-    std::snprintf(text, sizeof(text), "%d", player.jersey);
-    if (sprites) {
-        const Vector2 below{center.x,
-                            center.y + (player.attributes.radius + 0.45f) * pixelsPerYard};
-        drawCenteredText(text, Vector2{below.x + 1.0f, below.y + 1.0f}, 12, theme::shadow(0.8f));
-        drawCenteredText(text, below, 12, theme::kLineWhite);
-    } else {
+// dark shadow so it reads on the bright grass. With polish on the TTF font is used; plain mode
+// keeps raylib's default font.
+void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard, bool sprites,
+                      const RenderContext& context) {
+    char number[4];
+    std::snprintf(number, sizeof(number), "%d", player.jersey);
+    if (!context.polish) {
         const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
-        drawCenteredText(text, center, fontSize, theme::kLineWhite);
+        drawCenteredText(number, center, fontSize, theme::kLineWhite);
+        return;
+    }
+    const Font& font = context.assets.font();
+    if (sprites) {
+        const float size = 0.5f * pixelsPerYard; // scales with the camera zoom
+        const Vector2 below{center.x, center.y + (player.attributes.radius + 0.4f) * pixelsPerYard};
+        text::drawCentered(font, number, Vector2{below.x + 1.5f, below.y + 1.5f}, size,
+                           theme::shadow(0.8f));
+        text::drawCentered(font, number, below, size, theme::kLineWhite);
+    } else {
+        text::drawCentered(font, number, center, player.attributes.radius * pixelsPerYard * 1.3f,
+                           theme::kLineWhite);
     }
 }
 
@@ -347,7 +357,7 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool deb
 
         const bool sprites = context.polish && spriteFor(player, context.assets) != nullptr;
         if (showJerseyNumber(player, context, debug)) {
-            drawJerseyNumber(player, center, pixelsPerYard, sprites);
+            drawJerseyNumber(player, center, pixelsPerYard, sprites, context);
         }
 
         // Throw-button badge above each eligible receiver.
