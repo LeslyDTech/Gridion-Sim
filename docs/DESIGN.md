@@ -149,9 +149,26 @@ rounds them. The popup animation is driven by `Game::secondsSincePlayEnded()`, s
 state of its own, and down & distance are measured from `Game::lineOfScrimmageX()`, the spot of
 the next snap once a play has ended.
 
-The camera (`FollowCamera`) frames every player inside the HUD-free safe area: zoom is the closer
-of a 32-yard view and the zoom that fits the players' bounding box, and the center follows the
-ball within those limits. The limits are re-applied after smoothing each frame, so a fast player
+### Blocking and tackling (`World`)
+Players have mass and blocking, shedding and tackling ratings per role (`attributesFor`).
+Contact pushes players apart in inverse proportion to mass, so a lineman holds his ground against
+a lighter player. Blockers get assignments in a "zone" scheme: every blocker/rusher pair in range
+is sorted by distance and taken greedily (one blocker per rusher first, spare blockers double),
+and an assignment sticks until the rusher sheds or leaves range. A defender within a short reach
+of his blocker is engaged and moves at 20% speed until he sheds the block after
+`blockHoldSeconds()` (base 1.4 s x blocker rating / shed rating, ~1.75 s line vs line), then slips
+free for 0.8 s. Contact with the ball carrier is a tackle attempt: `tackleChance()` combines the
+defender's rating, the angle (head-on beats from behind), the carrier's speed and the closing
+speed, clamped to 15-95%. A miss makes the defender stumble for 0.6 s. Rolls come from a
+`std::mt19937` reseeded every play from the play count, so the simulation stays deterministic and
+reproducible. With no input, the shotgun pocket now holds ~3.8 s (it was ~1.2 s).
+
+The camera (`FollowCamera`) keeps a bounding box inside the HUD-free safe area: zoom is the closer
+of a 32-yard view and the zoom that fits the box, and the center follows the ball within those
+limits. Before the snap the box is all 22 players (sprites are never drawn below 26 px, so the
+zoomed-out formation stays readable); from the snap on it is the action (the ball, players within
+8 yards of it, and a pass's landing spot and intended receiver), with edge arrows for receivers
+outside the view. The limits are re-applied after smoothing each frame, so a fast player
 can never slip under the scorebug while the camera catches up. Formation spacing (1-yard line
 splits) lives in the play JSON, and the loader rejects formations whose players overlap.
 
@@ -190,8 +207,7 @@ Estimates assume part-time work (about 10 h/week) and include tests.
 | Task | Estimate |
 |---|---|
 | Players accelerate/decelerate through route cuts (speed loss scales with cut angle) | 4 h |
-| Player ratings in JSON (speed, strength, tackling); collision push weighted by mass | 5 h |
-| Broken tackles: tackle probability from ratings and closing speed, seeded RNG for determinism | 4 h |
+| Player ratings per player in the play JSON (today they are per role, in code) | 3 h |
 | Zone coverage: defenders drop to zone landmarks and match receivers entering their area | 8 h |
 | Interceptions and contested catches | 4 h |
 | Real handoff animation instead of a teleporting ball | 2 h |

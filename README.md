@@ -83,6 +83,10 @@ All visual polish lives in `src/platform`. F2 turns it off to show the plain Mil
   play clock), yards-gained popup with a FIRST DOWN tag, and a controls bar. Every color, size,
   padding and position is a named constant in `Theme.h` (`theme::hud`), named after its Figma
   layer, and every value shown comes from the game state in `src/core`.
+- Camera: frames the whole formation before the snap (sprites never drawn below 26 px), then
+  follows the action at a close zoom; receivers off screen get edge arrows with their throw
+  number. While a pass is in the air, its landing spot and the intended receiver are marked.
+- Running animation (a speed-scaled bob and shoulder sway) and soft shadows.
 - Top-down player, ball and grass art from Kenney's Sports Pack, rotated to each player's facing
   direction and sized to the collision circles (details in `assets/ASSETS.md`).
 
