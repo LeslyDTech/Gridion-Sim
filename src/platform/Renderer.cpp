@@ -1,11 +1,14 @@
 #include "Renderer.h"
 
 #include "Assets.h"
+#include "DebugOverlay.h"
 #include "Effects.h"
+#include "FieldRenderer.h"
 #include "FollowCamera.h"
 #include "Text.h"
 #include "Theme.h"
 #include "core/FieldGeometry.h"
+#include "core/Game.h"
 #include "core/World.h"
 
 #include <raylib.h>
@@ -380,6 +383,28 @@ void drawReceiverBadges(const World& world, const RenderContext& context) {
 } // namespace
 
 // ================================================================ world space
+
+void drawWorldLayers(const Game& game, const RenderContext& context, const Effects& effects,
+                     const DebugOverlay* overlay) {
+    const World& world = game.world();
+    BeginMode2D(context.camera.raylibCamera());
+    drawField(context);
+    drawLineOfScrimmage(world, context);
+    if (world.phase() == PlayPhase::PreSnap) {
+        drawFirstDownLine(game.drive().firstDownLineX(), context);
+    }
+    if (overlay != nullptr) {
+        overlay->drawGrid(world.spatialHash());
+    }
+    drawRoutes(world, context, effects.routeOpacity());
+    drawPassTarget(world, context);
+    if (context.polish) {
+        effects.drawParticles();
+    }
+    drawPlayers(world, context, effects);
+    drawBall(world, context);
+    EndMode2D();
+}
 
 void drawLineOfScrimmage(const World& world, const RenderContext& /*context*/) {
     const float x = world.lineOfScrimmageX();

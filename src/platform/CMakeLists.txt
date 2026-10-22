@@ -2,6 +2,7 @@
 add_executable(gridiron
     main.cpp
     App.cpp
+    AttractMode.cpp
     AssetDecode.cpp
     AssetLoader.cpp
     Assets.cpp
@@ -17,6 +18,7 @@ add_executable(gridiron
     MenuWidgets.cpp
     PauseScene.cpp
     Renderer.cpp
+    TitleScene.cpp
     UiDraw.cpp
 )
 

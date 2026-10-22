@@ -1,10 +1,11 @@
 #include "LoadingScene.h"
 
 #include "Assets.h"
-#include "GameScene.h"
+#include "AttractMode.h"
 #include "InputDevice.h"
 #include "MenuWidgets.h"
 #include "Theme.h"
+#include "TitleScene.h"
 #include "UiDraw.h"
 #include "app/SceneManager.h"
 
@@ -68,7 +69,9 @@ void LoadingScene::proceed() {
         return;
     }
     m_proceeding = true;
-    m_context.scenes.replace(std::make_unique<GameScene>(m_context, GameMode::Drive));
+    // The plays are loaded now, so the attract-mode game behind the menus can start.
+    m_context.attract = std::make_unique<AttractMode>(m_context.playbook, m_context.defense);
+    m_context.scenes.replace(std::make_unique<TitleScene>(m_context));
 }
 
 void LoadingScene::draw() {

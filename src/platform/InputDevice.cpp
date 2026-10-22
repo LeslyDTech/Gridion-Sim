@@ -115,7 +115,11 @@ void InputDevice::pollMenu() {
             anyPad = anyPad || IsGamepadButtonPressed(kGamepad, button);
         }
     }
-    m_menu.anyKey = GetKeyPressed() != 0 || anyPad || m_menu.mouseClicked;
+    bool anyKey = false;
+    for (int key = GetKeyPressed(); key != 0; key = GetKeyPressed()) {
+        anyKey = anyKey || key < KEY_F1 || key > KEY_F12;
+    }
+    m_menu.anyKey = anyKey || anyPad || m_menu.mouseClicked;
 }
 
 InputCommands InputDevice::consumeForStep() {

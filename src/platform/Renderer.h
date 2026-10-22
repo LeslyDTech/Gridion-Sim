@@ -4,13 +4,21 @@
 
 namespace gridiron {
 
+class DebugOverlay;
 class Effects;
+class Game;
 class World;
 
 // Stateless drawing functions for everything on the field except the field itself
 // (FieldRenderer) and the HUD (Hud). Shapes are drawn in world units (yards) inside the
 // camera's 2D mode; labels are drawn afterwards in screen space so they stay crisp.
 namespace render {
+
+// Everything on the field, in order: turf, lines, routes, pass target, particles, players, ball.
+// Wraps its own BeginMode2D/EndMode2D. Shared by the game and the attract mode behind the menus.
+// `overlay` (may be null) adds the F1 collision grid.
+void drawWorldLayers(const Game& game, const RenderContext& context, const Effects& effects,
+                     const DebugOverlay* overlay);
 
 // --- World space (between BeginMode2D / EndMode2D) ---
 void drawLineOfScrimmage(const World& world, const RenderContext& context);

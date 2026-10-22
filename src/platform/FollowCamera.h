@@ -51,6 +51,10 @@ public:
     // closer than the framing allows: players can leave the screen, and the view stays inside
     // the framed box, as close to the ball as it can.
     void setUserZoom(float zoom) { m_userZoom = zoom; }
+
+    // How quickly the camera pans toward its target (higher = snappier). The attract-mode
+    // camera behind the menus uses a low value so it drifts lazily.
+    void setFollowSharpness(float sharpness) { m_followSharpness = sharpness; }
     float userZoom() const { return m_userZoom; }
 
     const Camera2D& raylibCamera() const { return m_camera; }
@@ -74,6 +78,7 @@ private:
     float m_visibleYardsAcross;
     SafeArea m_safe;
     float m_userZoom = 1.0f;
+    float m_followSharpness = 6.0f;
     Vec2 m_center;
 };
 

@@ -5,6 +5,7 @@
 #include "core/PlayDefinition.h"
 
 #include <filesystem>
+#include <memory>
 #include <vector>
 
 namespace gridiron {
@@ -30,7 +31,8 @@ struct AppContext {
     PlayDefinition defense;
 
     // Background play running behind the title and main menu (null until loading finishes).
-    AttractMode* attract = nullptr;
+    // AttractMode is only forward-declared here; App.cpp, which destroys the context, includes it.
+    std::unique_ptr<AttractMode> attract;
 
     bool polish = true;  // F2
     int fpsCap = 144;    // F3

@@ -1,5 +1,6 @@
 #include "App.h"
 
+#include "AttractMode.h"
 #include "LoadingScene.h"
 #include "Theme.h"
 

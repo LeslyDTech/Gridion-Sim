@@ -163,21 +163,7 @@ void GameScene::draw() {
     const bool polish = m_context.polish;
     const RenderContext context{m_camera, m_context.assets, m_alpha, polish, GetTime()};
 
-    BeginMode2D(m_camera.raylibCamera());
-    render::drawField(context);
-    render::drawLineOfScrimmage(world, context);
-    if (world.phase() == PlayPhase::PreSnap) {
-        render::drawFirstDownLine(m_game.drive().firstDownLineX(), context);
-    }
-    m_context.overlay.drawGrid(world.spatialHash());
-    render::drawRoutes(world, context, m_effects.routeOpacity());
-    render::drawPassTarget(world, context);
-    if (polish) {
-        m_effects.drawParticles();
-    }
-    render::drawPlayers(world, context, m_effects);
-    render::drawBall(world, context);
-    EndMode2D();
+    render::drawWorldLayers(m_game, context, m_effects, &m_context.overlay);
 
     render::drawVignette(context);
     render::drawPlayerLabels(world, context, m_context.overlay.enabled());

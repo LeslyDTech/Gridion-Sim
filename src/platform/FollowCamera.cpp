@@ -13,9 +13,8 @@ namespace {
 constexpr float kMarginX = 0.0f;
 constexpr float kMarginY = 4.0f;
 
-// Higher = snappier. The camera closes ~1 - e^(-k*t) of the gap per t seconds, which
-// behaves the same at any frame rate (unlike "move 10% per frame").
-constexpr float kFollowSharpness = 6.0f;
+// Pan smoothing: the camera closes ~1 - e^(-k*t) of the gap per t seconds (k = m_followSharpness),
+// which behaves the same at any frame rate (unlike "move 10% per frame").
 constexpr float kZoomSharpness = 4.0f;
 
 float smoothing(float sharpness, float seconds) { return 1.0f - std::exp(-sharpness * seconds); }
@@ -87,7 +86,7 @@ void FollowCamera::follow(Vec2 focus, Bounds players, float frameSeconds, int sc
 
     // Smooth the pan toward the ball, then enforce the framing rules (hard limits again).
     const Vec2 target = constrainCenter(focus, players, view);
-    m_center = lerp(m_center, target, smoothing(kFollowSharpness, frameSeconds));
+    m_center = lerp(m_center, target, smoothing(m_followSharpness, frameSeconds));
     m_center = constrainCenter(m_center, players, view);
     apply(shake, screenWidth, view);
 }
