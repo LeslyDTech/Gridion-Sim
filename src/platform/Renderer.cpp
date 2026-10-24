@@ -274,7 +274,7 @@ void drawCenteredText(const char* text, Vector2 center, int fontSize, Color colo
 // keeps raylib's default font.
 void drawJerseyNumber(const Player& player, Vector2 center, float pixelsPerYard, bool sprites,
                       const RenderContext& context) {
-    char number[4];
+    char number[12]; // room for any int, so GCC can prove snprintf never truncates
     std::snprintf(number, sizeof(number), "%d", player.jersey);
     if (!context.polish) {
         const int fontSize = static_cast<int>(player.attributes.radius * pixelsPerYard * 1.1f);
@@ -325,7 +325,7 @@ bool showsBadge(const Player& player, const World& world) {
 void drawBadge(const Player& player, Vector2 at, float radius, const RenderContext& context) {
     using theme::hud::Weight;
     DrawCircleV(at, radius, theme::panel(0.85f));
-    char number[4];
+    char number[12]; // room for any int, so GCC can prove snprintf never truncates
     std::snprintf(number, sizeof(number), "%d", player.receiverNumber + 1);
     if (context.polish) {
         text::drawCentered(context.assets.hudFont(Weight::Bold, 17.0f), number, at, 17.0f,
