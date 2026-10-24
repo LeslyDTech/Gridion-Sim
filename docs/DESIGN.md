@@ -172,9 +172,12 @@ outside the view. The limits are re-applied after smoothing each frame, so a fas
 can never slip under the scorebug while the camera catches up. Formation spacing (1-yard line
 splits) lives in the play JSON, and the loader rejects formations whose players overlap.
 
-Art (Kenney Sports Pack, CC0) is loaded by `Assets` (RAII) and is optional: if a texture is
-missing, the renderer draws shapes instead. `Theme.h` was resampled from the sprites so the
-code-drawn elements and the art share one palette.
+Art (the Figma player atlas, plus Kenney Sports Pack ball and grass, CC0) is loaded by `Assets`
+(RAII) and is optional: if a texture is missing, the renderer draws shapes instead. The team
+colors in `Theme.h` are the sprites' Figma jersey colors, so the code-drawn elements and the art
+share one palette. All 576 player tiles live in one texture; a player's tile is pure arithmetic on
+(team, position, pose, direction) (`PlayerSprites.h`), and the five skin tones come from one
+shader uniform instead of five copies of a 33 MB atlas.
 
 ## 4. Key trade-offs
 

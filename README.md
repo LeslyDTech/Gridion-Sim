@@ -89,8 +89,10 @@ All visual polish lives in `src/platform`. F2 turns it off to show the plain Mil
   follows the action at a close zoom; receivers off screen get edge arrows with their throw
   number. While a pass is in the air, its landing spot and the intended receiver are marked.
 - Running animation (a speed-scaled bob and shoulder sway) and soft shadows.
-- Top-down player, ball and grass art from Kenney's Sports Pack, rotated to each player's facing
-  direction and sized to the collision circles (details in `assets/ASSETS.md`).
+- Custom top-down player sprites designed in Figma: both teams, nine positions and eight poses
+  (idle, run, block, tackle, catch, throw, fall, kick) chosen from the simulation state, four
+  facing directions with smooth rotation in between, and five skin tones swapped in by a shader.
+  Ball and grass art from Kenney's Sports Pack. Details in `assets/ASSETS.md`.
 
 ## Architecture
 
@@ -140,7 +142,8 @@ the wrong side of the ball.
 
 ## Credits
 
-- Player, ball and field tile art: [Sports Pack](https://kenney.nl/assets/sports-pack) by Kenney,
+- Player sprites: designed in Figma for this project (`assets/sprites/players.png`).
+- Ball and field tile art: [Sports Pack](https://kenney.nl/assets/sports-pack) by Kenney,
   CC0 1.0 (`assets/LICENSE-kenney.txt`).
 - Fonts: [Barlow Condensed](https://github.com/jpt/barlow) by Jeremy Tribby (HUD),
   [Bebas Neue](https://github.com/dharmatype/Bebas-Neue) by Dharma Type (field paint, jersey

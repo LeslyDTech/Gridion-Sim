@@ -17,6 +17,7 @@ add_executable(gridiron
     LoadingScene.cpp
     MenuWidgets.cpp
     PauseScene.cpp
+    PlayerSprites.cpp
     Renderer.cpp
     TitleScene.cpp
     UiDraw.cpp

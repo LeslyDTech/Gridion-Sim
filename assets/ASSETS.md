@@ -1,10 +1,13 @@
 # Asset notes
 
-## Players — `sprites/players/`
-- 21 x 31 px each, top-down view. Shoulders run along the long axis, so the sprite **faces right (+X) by default**. Rotate from there to match movement direction.
-- `blue_1..5`, `orange_1..5`, `white_1..5`: same jersey color, five skin tones. Mix them per team.
-- At 1x a player is about 1.6 yards wide on the suggested field scale. Drawing them at 1.5x looks good; use point filtering (raylib's default) so edges stay crisp.
-- Suggested teams: blue (offense) vs orange (defense). White is a spare (alternate jerseys or practice squad).
+## Players — `sprites/players.png` (Figma)
+- Exported from the Figma frame "PlayerSprite / Transparent Export Atlas / 576 Base Tiles"
+  (file bsPx98QvHlBZm4zPhRb66P, page node 11:3), 1920 x 4320 px, transparent background.
+- 576 tiles: 2 teams (Comets, Blaze) x 9 positions (QB RB WR TE OL DL LB DB K) x 8 poses
+  (idle run block tackle catch throw fall kick) x 4 facing directions (down up left right).
+- Each tile is 96 x 96 px on a 120 px pitch, 16 tiles per row, in exactly that order. The movement
+  anchor is the tile center (48, 48). Directly overhead, no drop shadows.
+- Exported with Skin/Medium, no ball in hand, and the design's default jersey number per position.
 
 ## Ball — `sprites/ball_football.png`
 - 14 x 16 px. Rotate along the flight path.
@@ -19,11 +22,13 @@
 
 ## How Gridiron Sim uses these
 
-- **Players:** blue = offense, orange = defense; white is unused. Skin tone = jersey number % 5,
-  so a player looks the same every play. Each sprite is scaled to its player's collision circle
-  (shoulders = 2.6 x radius) instead of the suggested 1.5x, so what you see matches the physics,
-  and rotated to the player's facing direction. Trilinear filtering with mipmaps is used instead
-  of point filtering, because the sprites are drawn rotated and smaller than 1x.
+- **Players:** Comets = offense, Blaze = defense. The pose comes from the simulation state (see
+  src/platform/PlayerSprites.h). The nearest of the four facing tiles is drawn, rotated by the
+  remaining angle (at most 45 degrees), so turning is smooth. Skin tone = jersey number % 5,
+  so a player looks the same every play: a shader swaps the exported Skin/Medium for one of the
+  five Figma skin tones. Each sprite is scaled so its shoulders are 2.08 x the collision radius,
+  so what you see matches the physics. Trilinear filtering with mipmaps keeps the rotated,
+  scaled-down tiles smooth; the 24 px gaps between tiles keep mip levels from bleeding.
 - **Ball:** the sprite's long axis is at ~55 degrees, so that angle is subtracted when it is
   rotated along the flight path.
 - **Grass:** tile (0, 0) only, at the suggested 1 tile = 5 yards. Yard lines, hashes and

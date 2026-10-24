@@ -20,17 +20,16 @@ class Assets;
 struct AppContext;
 
 // One thing to load. Paths are relative to the executable's folder, with forward slashes, exactly
-// as the loading screen shows them ("assets/sprites/players/blue_3.png").
+// as the loading screen shows them ("assets/sprites/players.png").
 struct ManifestEntry {
     enum class Kind { Texture, Font, Plays, Defense };
-    enum class TextureSlot { HomeSprite, AwaySprite, Ball, Grass };
+    enum class TextureSlot { PlayerAtlas, Ball, Grass };
     enum class FontRole { Hud, Field, Debug };
 
     Kind kind;
     std::string path;
     // Texture
     TextureSlot slot = TextureSlot::Ball;
-    int variant = 0;
     // Font
     FontRole role = FontRole::Hud;
     theme::hud::Weight weight = theme::hud::Weight::Bold;

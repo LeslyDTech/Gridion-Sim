@@ -5,6 +5,7 @@
 #include "Effects.h"
 #include "FieldRenderer.h"
 #include "FollowCamera.h"
+#include "PlayerSprites.h"
 #include "Text.h"
 #include "Theme.h"
 #include "core/FieldGeometry.h"
@@ -40,11 +41,12 @@ void drawFacingIndicator(Vector2 center, float radius, Vec2 facing) {
     DrawTriangle(toRaylib(tip), toRaylib(right), toRaylib(left), theme::kLineWhite);
 }
 
-// --- Sprite art (Kenney Sports Pack) ---------------------------------------------------------
+// --- Sprite art --------------------------------------------------------------------------------
 
-// Player sprites are 21 x 31 px and face +x; the 31 px axis is the shoulders. The shoulders are
-// drawn 2.08x the collision radius wide: slightly wider than the collision circle (as real
-// shoulders are), and small enough that linemen with 1-yard splits never visually overlap.
+// Players come from the Figma player atlas (see PlayerSprites.h); the ball is Kenney Sports Pack.
+// A player's shoulders (theme::sprite::kShoulderPixels across the tile) are drawn 2.08x the
+// collision radius wide: slightly wider than the collision circle (as real shoulders are), and
+// small enough that linemen with 1-yard splits never visually overlap.
 constexpr float kSpriteShoulderToRadius = 2.08f;
 // When the camera pulls back to frame a wide formation, sprites would shrink to ~15 px. They are
 // never drawn smaller than this (long side, on screen). Purely visual: collisions still use the
@@ -93,11 +95,6 @@ void drawSprite(const Texture2D& texture, Vector2 center, float yardsPerPixel, f
                    Vector2{width / 2.0f, height / 2.0f}, angle, tint);
 }
 
-// Skin tone is picked from the jersey number, so a player looks the same every play.
-const Texture2D* spriteFor(const Player& player, const Assets& assets) {
-    return assets.playerSprite(player.team, player.jersey);
-}
-
 // Ring around the receiver a pass is thrown to: light blue, so it can't be mistaken for the ball
 // carrier's white ring (and yellow stays reserved for the first-down line).
 void drawTargetRing(Vector2 center, float radius, double time) {
@@ -117,11 +114,12 @@ void drawCarrierRing(Vector2 center, float radius, double time) {
 constexpr float kStrideBobScale = 0.05f;
 constexpr float kStrideSwayDegrees = 5.0f;
 
-void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 center, Vec2 facing,
-                      Effects::Stride stride, const RenderContext& context) {
+void drawSpritePlayer(const Player& player, const World& world, const Texture2D& atlas,
+                      Vector2 center, Vec2 facing, Effects::Stride stride,
+                      const RenderContext& context) {
     const float radius = player.attributes.radius;
     const float shoulderWidth = spriteShoulderYards(player, context.camera.pixelsPerYard());
-    const float yardsPerPixel = shoulderWidth / static_cast<float>(sprite.height);
+    const float yardsPerPixel = shoulderWidth / theme::sprite::kShoulderPixels;
 
     drawSoftShadow(context, center, shoulderWidth);
     // Rings are sized to the drawn sprite, so they still surround it at the minimum size.
@@ -136,7 +134,26 @@ void drawSpritePlayer(const Player& player, const Texture2D& sprite, Vector2 cen
         player.state == PlayerState::Tackled ? ColorBrightness(WHITE, -0.35f) : WHITE;
     const float bob = 1.0f + kStrideBobScale * stride.intensity * std::abs(std::sin(stride.phase));
     const float sway = kStrideSwayDegrees * stride.intensity * std::sin(stride.phase);
-    drawSprite(sprite, center, yardsPerPixel * bob, degrees(facing) + sway, tint);
+
+    const sprite::Facing direction = sprite::facingFor(facing);
+    const Rectangle source =
+        sprite::tile(player.team, sprite::positionFor(player.role),
+                     sprite::poseFor(player, world, stride.intensity), direction.direction);
+    // The tile's center is the movement anchor, so the tile is drawn centered on the player.
+    const float size = theme::sprite::kTileSize * yardsPerPixel * bob;
+
+    // Skin tone is picked from the jersey number, so a player looks the same every play.
+    // EndShaderMode flushes the draw, so each player gets its own skin uniform.
+    const Shader* skin = context.assets.skinShader();
+    if (skin != nullptr) {
+        BeginShaderMode(*skin);
+        context.assets.setSkinTone(player.jersey);
+    }
+    DrawTexturePro(atlas, source, Rectangle{center.x, center.y, size, size},
+                   Vector2{size / 2.0f, size / 2.0f}, direction.residualDegrees + sway, tint);
+    if (skin != nullptr) {
+        EndShaderMode();
+    }
 }
 
 // --- Code-drawn shapes (fallback when the art is missing) -------------------------------------
@@ -467,9 +484,9 @@ void drawRoutes(const World& world, const RenderContext& context, float opacity)
 void drawPlayers(const World& world, const RenderContext& context, const Effects& effects) {
     for (const Player& player : world.players()) {
         const Vector2 center = toRaylib(interpolated(player, context.alpha));
-        const Texture2D* sprite = spriteFor(player, context.assets);
-        if (context.polish && sprite != nullptr) {
-            drawSpritePlayer(player, *sprite, center, effects.facing(player.id),
+        const Texture2D* atlas = context.assets.playerAtlas();
+        if (context.polish && atlas != nullptr) {
+            drawSpritePlayer(player, world, *atlas, center, effects.facing(player.id),
                              effects.stride(player.id), context);
         } else if (context.polish) {
             drawPolishedPlayer(player, center, effects.facing(player.id), context);
@@ -534,7 +551,7 @@ void drawPlayerLabels(const World& world, const RenderContext& context, bool deb
     // Pass 1: jersey numbers and (debug) state names.
     for (const Player& player : world.players()) {
         const Vector2 center = context.camera.worldToScreen(interpolated(player, context.alpha));
-        const bool sprites = context.polish && spriteFor(player, context.assets) != nullptr;
+        const bool sprites = context.polish && context.assets.playerAtlas() != nullptr;
         if (showJerseyNumber(player, context, debug)) {
             drawJerseyNumber(player, center, pixelsPerYard, sprites, context);
         }

@@ -23,7 +23,7 @@ namespace gridiron {
 // a missing font falls back to raylib's built-in font, so the game still runs if a file is lost.
 class Assets {
 public:
-    static constexpr int kSkinTones = 5; // sprite variants per jersey color
+    static constexpr int kSkinTones = 5; // theme::sprite::kSkinTones
     // Debug overlay font size: JetBrains Mono's advance is exactly 10 px at this size.
     static constexpr int kDebugFontSize = 22;
     // Field paint (yard numbers, end zones) and jersey numbers: Bebas Neue at this size.
@@ -42,7 +42,7 @@ public:
     void setFieldFont(Font font);
     void setDebugFont(Font font);
     void addHudFont(theme::hud::Weight weight, int pixelSize, Font font);
-    void setPlayerSprite(Team team, int variant, Texture2D texture);
+    void setPlayerAtlas(Texture2D texture);
     void setBallSprite(Texture2D texture);
     void setGrassTiles(Texture2D texture);
 
@@ -61,8 +61,13 @@ public:
     // Soft round shadow: dark in the middle, fading to fully transparent at the edge.
     const Texture2D& softShadow() const { return m_softShadow; }
 
-    // Top-down player sprite, facing +x. `variant` picks one of kSkinTones skin tones.
-    const Texture2D* playerSprite(Team team, int variant) const;
+    // Every player sprite in one texture (layout in theme::sprite; tile rects from PlayerSprites.h).
+    const Texture2D* playerAtlas() const { return valid(m_playerAtlas); }
+    // Swaps the atlas's Skin/Medium for another skin tone. Null if it failed to compile; the
+    // sprites are then drawn with the exported skin tone.
+    const Shader* skinShader() const { return m_skinShader.id != 0 ? &m_skinShader : nullptr; }
+    // Must be called inside BeginShaderMode(*skinShader()), before drawing with it.
+    void setSkinTone(int tone) const;
     const Texture2D* ballSprite() const { return valid(m_ball); }
     // Tilesheet with 64x64 tiles; tile (0, 0) is plain striped grass.
     const Texture2D* grassTiles() const { return valid(m_grass); }
@@ -90,8 +95,9 @@ private:
     std::array<HudFont, kMaxHudFonts> m_hudFonts{};
     std::size_t m_hudFontCount = 0;
 
-    std::array<Texture2D, kSkinTones> m_homeSprites{};
-    std::array<Texture2D, kSkinTones> m_awaySprites{};
+    Texture2D m_playerAtlas{};
+    Shader m_skinShader{};
+    int m_skinLocation = -1;
     Texture2D m_ball{};
     Texture2D m_grass{};
 };

@@ -3,6 +3,8 @@
 #include "AssetDecode.h"
 #include "Theme.h"
 
+#include <rlgl.h>
+
 #include <algorithm>
 #include <cmath>
 #include <string>
@@ -45,6 +47,36 @@ Texture2D makeSoftFieldVignette() {
     return texture;
 }
 
+// Skin-tone swap for the player atlas, which is exported with one skin tone (Skin/Medium).
+// The art is flat vector fills, so skin is exactly one color, and its anti-aliased edges are mixes
+// of that color and the outline. Each pixel is projected onto the outline -> Skin/Medium color
+// line: pixels on that line (skin, or a skin/outline edge) are rebuilt at the same position on the
+// outline -> new-skin line; every other color (jerseys, helmets, face masks) is left alone. The
+// k > 0.25 ramp keeps near-outline colors, such as the Blaze's dark trim, untouched.
+constexpr const char* kSkinSwapShader = R"(#version 330
+in vec2 fragTexCoord;
+in vec4 fragColor;
+uniform sampler2D texture0;
+uniform vec4 colDiffuse;
+uniform vec3 baseSkin;
+uniform vec3 outlineColor;
+uniform vec3 skin;
+out vec4 finalColor;
+void main() {
+    vec4 texel = texture(texture0, fragTexCoord);
+    vec3 axis = baseSkin - outlineColor;
+    float k = clamp(dot(texel.rgb - outlineColor, axis) / dot(axis, axis), 0.0, 1.0);
+    float offLine = distance(texel.rgb, outlineColor + axis * k);
+    float weight = (1.0 - smoothstep(0.02, 0.06, offLine)) * smoothstep(0.25, 0.6, k);
+    vec3 swapped = outlineColor + (skin - outlineColor) * k;
+    finalColor = vec4(mix(texel.rgb, swapped, weight), texel.a) * colDiffuse * fragColor;
+}
+)";
+
+Vector3 toVector(Color color) {
+    return Vector3{color.r / 255.0f, color.g / 255.0f, color.b / 255.0f};
+}
+
 void unload(Texture2D& texture) {
     if (texture.id != 0) {
         UnloadTexture(texture);
@@ -77,6 +109,21 @@ Assets::Assets() : m_defaultFont(GetFontDefault()) {
     SetTextureFilter(m_softShadow, TEXTURE_FILTER_BILINEAR);
 
     m_softFieldVignette = makeSoftFieldVignette();
+
+    // Shaders compile in well under a millisecond, so this one is built here, not streamed in.
+    // nullptr: raylib's default vertex shader.
+    m_skinShader = LoadShaderFromMemory(nullptr, kSkinSwapShader);
+    if (IsShaderValid(m_skinShader) && m_skinShader.id != rlGetShaderIdDefault()) {
+        const Vector3 base = toVector(theme::sprite::kSkinMedium);
+        const Vector3 outline = toVector(theme::sprite::kOutline);
+        SetShaderValue(m_skinShader, GetShaderLocation(m_skinShader, "baseSkin"), &base,
+                       SHADER_UNIFORM_VEC3);
+        SetShaderValue(m_skinShader, GetShaderLocation(m_skinShader, "outlineColor"), &outline,
+                       SHADER_UNIFORM_VEC3);
+        m_skinLocation = GetShaderLocation(m_skinShader, "skin");
+    } else {
+        m_skinShader = Shader{}; // compile failed: raylib handed back its default shader
+    }
 }
 
 void Assets::loadBootFonts(const std::filesystem::path& assetDirectory) {
@@ -104,11 +151,9 @@ void Assets::loadBootFonts(const std::filesystem::path& assetDirectory) {
 }
 
 Assets::~Assets() {
-    for (Texture2D& texture : m_homeSprites) {
-        unload(texture);
-    }
-    for (Texture2D& texture : m_awaySprites) {
-        unload(texture);
+    unload(m_playerAtlas);
+    if (m_skinShader.id != 0) {
+        UnloadShader(m_skinShader);
     }
     unload(m_ball);
     unload(m_grass);
@@ -160,9 +205,15 @@ void Assets::addHudFont(theme::hud::Weight weight, int pixelSize, Font font) {
     m_hudFonts[m_hudFontCount++] = HudFont{weight, pixelSize, font};
 }
 
-void Assets::setPlayerSprite(Team team, int variant, Texture2D texture) {
-    auto& sprites = team == Team::Offense ? m_homeSprites : m_awaySprites;
-    replace(sprites[static_cast<std::size_t>(variant % kSkinTones)], texture);
+void Assets::setPlayerAtlas(Texture2D texture) { replace(m_playerAtlas, texture); }
+
+void Assets::setSkinTone(int tone) const {
+    if (m_skinShader.id == 0) {
+        return;
+    }
+    const auto index = static_cast<std::size_t>(tone % kSkinTones);
+    const Vector3 skin = toVector(theme::sprite::kSkinTones[index]);
+    SetShaderValue(m_skinShader, m_skinLocation, &skin, SHADER_UNIFORM_VEC3);
 }
 
 void Assets::setBallSprite(Texture2D texture) { replace(m_ball, texture); }
@@ -183,12 +234,6 @@ const Font& Assets::hudFont(theme::hud::Weight weight, float pixelSize) const {
         }
     }
     return best != nullptr ? best->font : font();
-}
-
-const Texture2D* Assets::playerSprite(Team team, int variant) const {
-    const auto& sprites = team == Team::Offense ? m_homeSprites : m_awaySprites;
-    const auto index = static_cast<std::size_t>(variant % kSkinTones);
-    return valid(sprites[index]);
 }
 
 } // namespace gridiron

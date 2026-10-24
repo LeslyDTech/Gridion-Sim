@@ -11,10 +11,11 @@
 namespace gridiron::theme {
 
 // --- Palette ---
-// Team and grass colors are sampled from the Kenney Sports Pack art (assets/), so code-drawn
-// shapes, the plain (F2 off) mode and the sprites all agree.
-inline constexpr Color kHome{65, 159, 221, 255};       // offense: sprite jersey blue
-inline constexpr Color kAway{232, 106, 23, 255};       // defense: sprite jersey orange
+// Team colors are the player sprites' jersey colors (theme::sprite, from Figma) and the grass
+// colors are sampled from the Kenney grass tile, so code-drawn shapes, the plain (F2 off) mode and
+// the art all agree.
+inline constexpr Color kHome{74, 144, 217, 255};       // offense: Comets/Primary #4A90D9
+inline constexpr Color kAway{201, 62, 62, 255};        // defense: Blaze/Primary #C93E3E
 inline constexpr Color kGrassLight{49, 217, 120, 255}; // the two stripes of the grass tile
 inline constexpr Color kGrassDark{46, 204, 113, 255};
 inline constexpr Color kLineWhite{242, 242, 236, 255};
@@ -277,3 +278,36 @@ inline constexpr float kPauseMenuOptionsTop = 104.0f;
 inline constexpr float kPauseMenuOptionsWidth = 352.0f;
 
 } // namespace gridiron::theme::menu
+
+// =================================================================================================
+// Player sprites (Figma page "PlayerSprite", node 11:3)
+//
+// The game draws the frame "PlayerSprite / Transparent Export Atlas / 576 Base Tiles", exported
+// to assets/sprites/players.png. Colors are the Figma variables of the same names.
+// =================================================================================================
+namespace gridiron::theme::sprite {
+
+// Atlas layout: 96 x 96 tiles on a 120 px pitch, 16 per row, ordered
+// team (Comets, Blaze) > position > pose > facing direction (down, up, left, right).
+inline constexpr float kTileSize = 96.0f;
+inline constexpr float kTilePitch = 120.0f;
+inline constexpr int kTilesPerRow = 16;
+// The movement anchor is the tile center (48, 48).
+// Shoulder width of the idle body rig across the facing direction, measured from the art (the
+// linemen rigs are a little wider, 72-76 px). The drawn size is scaled from this.
+inline constexpr float kShoulderPixels = 68.0f;
+
+// --- Shared ---
+inline constexpr Color kOutline{17, 25, 36, 255}; // Shared/Outline #111924
+
+// --- Skin ---
+// The atlas is exported with Skin/Medium; the renderer swaps it for one of the five tones.
+inline constexpr Color kSkinFair{242, 201, 165, 255};        // Skin/Fair #F2C9A5
+inline constexpr Color kSkinLightMedium{221, 167, 121, 255}; // Skin/LightMedium #DDA779
+inline constexpr Color kSkinMedium{185, 121, 80, 255};       // Skin/Medium #B97950
+inline constexpr Color kSkinDeep{138, 81, 51, 255};          // Skin/Deep #8A5133
+inline constexpr Color kSkinRichDeep{90, 50, 37, 255};       // Skin/RichDeep #5A3225
+inline constexpr Color kSkinTones[] = {kSkinFair, kSkinLightMedium, kSkinMedium, kSkinDeep,
+                                       kSkinRichDeep};
+
+} // namespace gridiron::theme::sprite

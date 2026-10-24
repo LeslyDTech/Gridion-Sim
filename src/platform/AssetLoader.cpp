@@ -14,14 +14,9 @@ std::vector<ManifestEntry> defaultManifest() {
     using theme::hud::Weight;
     std::vector<ManifestEntry> manifest;
 
-    // Kenney Sports Pack (CC0): blue jerseys for the offense, orange for the defense.
-    for (int i = 0; i < Assets::kSkinTones; ++i) {
-        const std::string suffix = "_" + std::to_string(i + 1) + ".png";
-        manifest.push_back(
-            {Kind::Texture, "assets/sprites/players/blue" + suffix, Slot::HomeSprite, i});
-        manifest.push_back(
-            {Kind::Texture, "assets/sprites/players/orange" + suffix, Slot::AwaySprite, i});
-    }
+    // Every player sprite, both teams, in one atlas (Figma "PlayerSprite"; see theme::sprite).
+    manifest.push_back({Kind::Texture, "assets/sprites/players.png", Slot::PlayerAtlas});
+    // Kenney Sports Pack (CC0).
     manifest.push_back({Kind::Texture, "assets/sprites/ball_football.png", Slot::Ball});
     manifest.push_back({Kind::Texture, "assets/tiles/field_grass.png", Slot::Grass});
 
@@ -30,15 +25,15 @@ std::vector<ManifestEntry> defaultManifest() {
     const char* bold = "assets/fonts/BarlowCondensed-Bold.ttf";
     const char* semiBold = "assets/fonts/BarlowCondensed-SemiBold.ttf";
     for (const int size : {17, 22, 24, 29, 34, 48, 58, 77}) {
-        manifest.push_back({Kind::Font, bold, Slot::Ball, 0, Role::Hud, Weight::Bold, size});
+        manifest.push_back({Kind::Font, bold, Slot::Ball, Role::Hud, Weight::Bold, size});
     }
     for (const int size : {14, 19, 29}) {
         manifest.push_back(
-            {Kind::Font, semiBold, Slot::Ball, 0, Role::Hud, Weight::SemiBold, size});
+            {Kind::Font, semiBold, Slot::Ball, Role::Hud, Weight::SemiBold, size});
     }
-    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball, 0,
+    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball,
                         Role::Field, Weight::Bold, Assets::kFieldFontSize});
-    manifest.push_back({Kind::Font, "assets/fonts/JetBrainsMono-Regular.ttf", Slot::Ball, 0,
+    manifest.push_back({Kind::Font, "assets/fonts/JetBrainsMono-Regular.ttf", Slot::Ball,
                         Role::Debug, Weight::Bold, Assets::kDebugFontSize});
 
     // Play data.
@@ -143,11 +138,8 @@ void AssetLoader::install(Decoded& item, Assets& assets, AppContext& context) {
     case ManifestEntry::Kind::Texture: {
         const Texture2D texture = uploadTexture(item.image);
         switch (entry.slot) {
-        case ManifestEntry::TextureSlot::HomeSprite:
-            assets.setPlayerSprite(Team::Offense, entry.variant, texture);
-            break;
-        case ManifestEntry::TextureSlot::AwaySprite:
-            assets.setPlayerSprite(Team::Defense, entry.variant, texture);
+        case ManifestEntry::TextureSlot::PlayerAtlas:
+            assets.setPlayerAtlas(texture);
             break;
         case ManifestEntry::TextureSlot::Ball:
             assets.setBallSprite(texture);
