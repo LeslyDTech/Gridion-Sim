@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DebugOverlay.h"
+#include "SettingsStore.h"
 #include "app/Settings.h"
 #include "core/PlayDefinition.h"
 
@@ -27,21 +28,21 @@ struct AppContext {
     std::filesystem::path settingsPath;
 
     // Loaded by the loading scene (or synchronously at startup).
-    std::vector<PlayDefinition> playbook;
-    PlayDefinition defense;
+    std::vector<PlayDefinition> playbook{};
+    PlayDefinition defense{};
 
     // Background play running behind the title and main menu (null until loading finishes).
     // AttractMode is only forward-declared here; App.cpp, which destroys the context, includes it.
-    std::unique_ptr<AttractMode> attract;
+    std::unique_ptr<AttractMode> attract{};
 
     bool polish = true;  // F2
     int fpsCap = 144;    // F3
-    FrameSample frame;   // filled in by GameScene for the debug overlay
+    FrameSample frame{}; // filled in by GameScene for the debug overlay
     int playerCount = 0; // for the overlay's brute-force comparison
     bool quitRequested = false;
 
-    // Writes settings.json next to the executable.
-    void saveSettings() const { ::gridiron::saveSettings(settings, settingsPath); }
+    // Writes settings.json next to the executable (localStorage in the browser build).
+    void saveSettings() const { storeSettings(settings, settingsPath); }
 };
 
 } // namespace gridiron

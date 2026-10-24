@@ -12,10 +12,10 @@ constexpr int kPositions = 9;
 constexpr int kPoses = 8;
 constexpr int kDirections = 4;
 
-constexpr float kThrowPoseSeconds = 0.3f;    // after the release
-constexpr float kCatchPoseSeconds = 0.35f;   // before the ball arrives
-constexpr float kTackleReachYards = 1.6f;    // defender this close to the carrier
-constexpr float kRunningIntensity = 0.2f;    // stride intensity above which the run pose shows
+constexpr float kThrowPoseSeconds = 0.3f;  // after the release
+constexpr float kCatchPoseSeconds = 0.35f; // before the ball arrives
+constexpr float kTackleReachYards = 1.6f;  // defender this close to the carrier
+constexpr float kRunningIntensity = 0.2f;  // stride intensity above which the run pose shows
 
 } // namespace
 
@@ -67,9 +67,8 @@ Pose poseFor(const Player& player, const World& world, float strideIntensity) {
     if (player.team == Team::Defense && ball.state == BallState::Held &&
         ball.carrierId != Player::kNone) {
         const Player& carrier = world.players()[static_cast<std::size_t>(ball.carrierId)];
-        if (carrier.team == Team::Offense &&
-            distanceSquared(player.position, carrier.position) <
-                kTackleReachYards * kTackleReachYards) {
+        if (carrier.team == Team::Offense && distanceSquared(player.position, carrier.position) <
+                                                 kTackleReachYards * kTackleReachYards) {
             return Pose::Tackle;
         }
     }

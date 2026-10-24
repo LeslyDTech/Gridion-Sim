@@ -38,9 +38,14 @@ class App {
 public:
     App();
     ~App();
+
+    // Desktop: loops until the window closes or a scene asks to quit.
+    // Browser: hands frame() to the browser, which calls it once per display refresh, and never
+    // returns (a web page can't block in a loop; the tab would freeze).
     void run();
 
 private:
+    void frame();
     void handleAppCommands();
     void applySettings();
     void drawFrame();

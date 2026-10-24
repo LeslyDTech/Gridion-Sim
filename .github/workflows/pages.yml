@@ -1,0 +1,57 @@
+name: Deploy web build
+
+# Builds the game for the browser (Emscripten -> WebAssembly) and publishes it to GitHub Pages
+# on every push to main. Repository setting required once: Settings -> Pages -> Source:
+# "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push replaces a queued one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned to the version the web build was tested with.
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.74
+
+      - name: Configure
+        run: emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release -DGRIDIRON_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build-web --parallel
+
+      # index.html, index.js, index.wasm and index.data are the whole site.
+      - name: Collect site
+        run: |
+          mkdir site
+          cp build-web/bin/index.html build-web/bin/index.js build-web/bin/index.wasm \
+             build-web/bin/index.data site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

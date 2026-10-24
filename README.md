@@ -1,6 +1,10 @@
 # Gridiron Sim
 
 [![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
+[![Deploy web build](../../actions/workflows/pages.yml/badge.svg)](../../actions/workflows/pages.yml)
+
+**[Play it in your browser](https://leslydtech.github.io/Gridion-Sim/)**: the same C++ code,
+compiled to WebAssembly with Emscripten (keyboard or gamepad; desktop browsers).
 
 A top-down 2D American football play simulator written in modern C++17. Plays are loaded from
 JSON files, 22 players run a per-player state machine with steering-based AI, collisions go
@@ -48,6 +52,25 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ./build/bin/gridiron
 ```
+
+### Web (Emscripten)
+
+The browser build is published automatically to GitHub Pages by
+`.github/workflows/pages.yml` on every push to `main`. To build it locally, install the
+[Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) (3.1.74 is the
+tested version) and Ninja, then:
+
+```powershell
+emcmake cmake -S . -B build-web -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-web
+python -m http.server 8000 --directory build-web/bin   # open http://localhost:8000
+```
+
+The output is `index.html`, `index.js`, `index.wasm` and `index.data` (the packed `assets/` and
+`data/`). It must be served over HTTP; opening the file directly doesn't work. Differences from
+desktop: assets load on the main thread (static hosts can't enable WebAssembly threads), settings
+are kept in the browser's localStorage, the browser paces frames (no F3 frame cap), and the page
+is a fixed 1280 x 720 canvas inside `web/shell.html`.
 
 ### Build options
 

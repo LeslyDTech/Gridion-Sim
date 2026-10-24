@@ -1,0 +1,180 @@
+<!doctype html>
+<!--
+  Page template for the browser build (emcc --shell-file). Emscripten replaces the SCRIPT
+  placeholder below with the generated loader for index.js / index.wasm / index.data.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gridiron Sim</title>
+  <meta name="description" content="A top-down American football play simulator in C++17 and raylib, running in the browser as WebAssembly.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #14161c;
+      --panel: #1c1f27;
+      --line: #2a2e38;
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.7);
+      --accent: #f5c518;
+      --home: #4a90d9;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--ink); color: var(--text); }
+    body {
+      font-family: "Barlow Condensed", system-ui, sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 32px;
+    }
+    header, footer, .controls { width: 100%; max-width: 1280px; }
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    h1 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 40px;
+      line-height: 1;
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 6px;
+    }
+    header p { margin: 0; color: var(--muted); font-size: 18px; }
+    a { color: var(--text); }
+    a:hover { color: var(--accent); }
+
+    /* The game draws into a fixed 1280 x 720 canvas; narrower screens scroll it sideways. */
+    .stage {
+      position: relative;
+      width: 100%;
+      max-width: 1280px;
+      overflow-x: auto;
+      border-radius: 4px;
+      background: #000;
+    }
+    canvas {
+      display: block;
+      width: 1280px;
+      height: 720px;
+      outline: none;
+    }
+    .status {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      width: 1280px;
+      height: 720px;
+      background: var(--ink);
+      font-size: 22px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .status[hidden] { display: none; }
+    .status .bar { width: 480px; height: 12px; background: var(--panel); }
+    .status .fill { width: 0; height: 100%; background: var(--home); transition: width 0.2s; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px 24px;
+      margin-top: 16px;
+      padding: 16px 24px;
+      background: var(--panel);
+      border-left: 4px solid var(--home);
+      border-radius: 4px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+    kbd {
+      font-family: inherit;
+      font-weight: 700;
+      color: var(--text);
+    }
+    footer { margin-top: 16px; font-size: 16px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>GRIDIRON SIM</h1>
+    <p>Top-down football play simulator &middot; C++17 + raylib, compiled to WebAssembly &middot;
+      <a href="https://github.com/LeslyDTech/Gridion-Sim">Source on GitHub</a></p>
+  </header>
+
+  <div class="stage">
+    <canvas id="canvas" width="1280" height="720" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+    <div class="status" id="status">
+      <span id="status-text">Downloading&hellip;</span>
+      <div class="bar"><div class="fill" id="status-fill"></div></div>
+    </div>
+  </div>
+
+  <section class="controls" aria-label="Controls">
+    <span><kbd>ENTER</kbd> start &middot; <kbd>ESC</kbd> pause</span>
+    <span><kbd>1&ndash;4</kbd> pick a play &middot; <kbd>TAB</kbd> browse</span>
+    <span><kbd>SPACE</kbd> snap the ball</span>
+    <span><kbd>1&ndash;5</kbd> throw to a receiver</span>
+    <span><kbd>ARROWS / WASD</kbd> run with the ball</span>
+    <span><kbd>F1</kbd> debug overlay &middot; <kbd>F2</kbd> plain view</span>
+    <span><kbd>WHEEL</kbd> zoom &middot; <kbd>MIDDLE CLICK</kbd> reset</span>
+    <span>Gamepads work too</span>
+  </section>
+
+  <footer>Click the field if the keyboard doesn't respond.</footer>
+
+  <script>
+    var canvas = document.getElementById("canvas");
+    var statusBox = document.getElementById("status");
+    var statusText = document.getElementById("status-text");
+    var statusFill = document.getElementById("status-fill");
+
+    // Keep the arrow keys, space and Tab inside the game instead of scrolling the page or moving
+    // focus away from the canvas.
+    window.addEventListener("keydown", function (event) {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Tab"].indexOf(event.key) >= 0) {
+        event.preventDefault();
+      }
+    });
+    canvas.addEventListener("mousedown", function () { canvas.focus(); });
+
+    var Module = {
+      canvas: canvas,
+      // Emscripten reports download progress as "Downloading data... (12345/67890)".
+      setStatus: function (text) {
+        if (!text) {
+          statusBox.hidden = true;
+          canvas.focus();
+          return;
+        }
+        var match = text.match(/\((\d+(?:\.\d+)?)\/(\d+)\)/);
+        if (match) {
+          statusFill.style.width = (100 * Number(match[1]) / Number(match[2])) + "%";
+          statusText.textContent = "Downloading game data…";
+        } else {
+          statusText.textContent = text;
+        }
+      },
+      onAbort: function () {
+        statusBox.hidden = false;
+        statusText.textContent = "The game stopped unexpectedly. Reload the page to try again.";
+      }
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

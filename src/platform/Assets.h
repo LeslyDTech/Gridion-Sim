@@ -61,7 +61,8 @@ public:
     // Soft round shadow: dark in the middle, fading to fully transparent at the edge.
     const Texture2D& softShadow() const { return m_softShadow; }
 
-    // Every player sprite in one texture (layout in theme::sprite; tile rects from PlayerSprites.h).
+    // Every player sprite in one texture (layout in theme::sprite; tile rects from
+    // PlayerSprites.h).
     const Texture2D* playerAtlas() const { return valid(m_playerAtlas); }
     // Swaps the atlas's Skin/Medium for another skin tone. Null if it failed to compile; the
     // sprites are then drawn with the exported skin tone.

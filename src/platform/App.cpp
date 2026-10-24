@@ -6,6 +6,10 @@
 
 #include <raylib.h>
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
+
 #include <array>
 #include <memory>
 
@@ -16,7 +20,13 @@ constexpr int kWindowWidth = 1280;
 constexpr int kWindowHeight = 720;
 
 // F3 cycles through these render caps to show that simulation speed does not depend on them.
+// In the browser the page's refresh rate paces frames instead, so there is no cap (0) and F3 does
+// nothing: raylib's frame limiter would sleep inside the browser's frame callback.
+#if defined(__EMSCRIPTEN__)
+constexpr std::array<int, 1> kFpsCaps = {0};
+#else
 constexpr std::array<int, 5> kFpsCaps = {144, 60, 30, 240, 0};
+#endif
 
 // data/, assets/ and settings.json live next to the executable (the build copies data/ and
 // assets/ there; see src/platform/CMakeLists.txt).
@@ -28,7 +38,12 @@ std::filesystem::path applicationDirectory() {
 
 RaylibWindow::RaylibWindow(int width, int height, const char* title) {
     SetTraceLogLevel(LOG_WARNING); // keep the console quiet unless something is wrong
+#if defined(__EMSCRIPTEN__)
+    // A fixed 1280x720 canvas: the page lays out around it (web/shell.html).
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
+#else
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
+#endif
     InitWindow(width, height, title);
     SetExitKey(KEY_NULL); // Esc opens the pause menu; it must never silently quit
 }
@@ -41,9 +56,10 @@ AudioDevice::~AudioDevice() { CloseAudioDevice(); }
 App::App()
     : m_window(kWindowWidth, kWindowHeight, "Gridiron Sim"),
       m_settingsPath(applicationDirectory() / "settings.json"),
-      m_settings(loadSettings(m_settingsPath)),
+      m_settings(loadStoredSettings(m_settingsPath)),
       m_context{m_assets, m_input, m_scenes, m_overlay, m_settings, m_settingsPath} {
     SetTargetFPS(kFpsCaps[0]);
+    m_context.fpsCap = kFpsCaps[0];
     applySettings();
     if (m_settings.showDebugOnStart) {
         m_overlay.toggle();
@@ -62,21 +78,34 @@ App::~App() {
 
 void App::applySettings() {
     SetMasterVolume(m_settings.masterVolume);
+#if !defined(__EMSCRIPTEN__)
+    // Browsers only allow fullscreen in response to a click or key press, never at page load.
     if (m_settings.fullscreen != IsWindowState(FLAG_BORDERLESS_WINDOWED_MODE)) {
         ToggleBorderlessWindowed();
     }
+#endif
 }
 
 void App::run() {
+#if defined(__EMSCRIPTEN__)
+    // fps 0: use the browser's requestAnimationFrame. `true`: don't return to main(), whose stack
+    // frame is gone once the browser takes over (main.cpp keeps App on the heap for this reason).
+    emscripten_set_main_loop_arg([](void* app) { static_cast<App*>(app)->frame(); }, this, 0, true);
+#else
     while (!WindowShouldClose() && !m_context.quitRequested) {
-        const float frameSeconds = GetFrameTime();
-        m_input.poll();
-        handleAppCommands();
-        m_scenes.update(frameSeconds);
-        m_context.frame.frameSeconds = frameSeconds;
-        m_overlay.record(m_context.frame);
-        drawFrame();
+        frame();
     }
+#endif
+}
+
+void App::frame() {
+    const float frameSeconds = GetFrameTime();
+    m_input.poll();
+    handleAppCommands();
+    m_scenes.update(frameSeconds);
+    m_context.frame.frameSeconds = frameSeconds;
+    m_overlay.record(m_context.frame);
+    drawFrame();
 }
 
 void App::handleAppCommands() {

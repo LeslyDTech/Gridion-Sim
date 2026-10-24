@@ -28,11 +28,10 @@ std::vector<ManifestEntry> defaultManifest() {
         manifest.push_back({Kind::Font, bold, Slot::Ball, Role::Hud, Weight::Bold, size});
     }
     for (const int size : {14, 19, 29}) {
-        manifest.push_back(
-            {Kind::Font, semiBold, Slot::Ball, Role::Hud, Weight::SemiBold, size});
+        manifest.push_back({Kind::Font, semiBold, Slot::Ball, Role::Hud, Weight::SemiBold, size});
     }
-    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball,
-                        Role::Field, Weight::Bold, Assets::kFieldFontSize});
+    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball, Role::Field,
+                        Weight::Bold, Assets::kFieldFontSize});
     manifest.push_back({Kind::Font, "assets/fonts/JetBrainsMono-Regular.ttf", Slot::Ball,
                         Role::Debug, Weight::Bold, Assets::kDebugFontSize});
 
@@ -56,7 +55,11 @@ AssetLoader::~AssetLoader() {
     }
 }
 
-void AssetLoader::start() { m_worker = std::thread(&AssetLoader::workerMain, this); }
+void AssetLoader::start() {
+#if !defined(__EMSCRIPTEN__)
+    m_worker = std::thread(&AssetLoader::workerMain, this);
+#endif
+}
 
 float AssetLoader::progress() const {
     return m_manifest.empty()
@@ -71,15 +74,20 @@ std::string AssetLoader::currentPath() const {
 
 // Worker thread: CPU work only. No raylib call made here touches OpenGL.
 void AssetLoader::workerMain() {
-    for (std::size_t i = 0; i < m_manifest.size() && !m_stop; ++i) {
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            m_current = m_manifest[i].path;
-        }
-        Decoded item = decode(i);
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_ready.push_back(std::move(item));
+    while (m_nextDecode < m_manifest.size() && !m_stop) {
+        decodeNext();
     }
+}
+
+void AssetLoader::decodeNext() {
+    const std::size_t index = m_nextDecode++;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_current = m_manifest[index].path;
+    }
+    Decoded item = decode(index);
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_ready.push_back(std::move(item));
 }
 
 AssetLoader::Decoded AssetLoader::decode(std::size_t index) const {
@@ -109,6 +117,11 @@ AssetLoader::Decoded AssetLoader::decode(std::size_t index) const {
 
 // Main thread: GPU uploads happen here (see the class comment).
 void AssetLoader::pump(Assets& assets, AppContext& context, int budget) {
+#if defined(__EMSCRIPTEN__)
+    if (m_nextDecode < m_manifest.size()) {
+        decodeNext(); // no worker in the browser (see the class comment)
+    }
+#endif
     for (int i = 0; i < budget; ++i) {
         Decoded item;
         {

@@ -3,10 +3,9 @@
 #include "AssetDecode.h"
 #include "Theme.h"
 
-#include <rlgl.h>
-
 #include <algorithm>
 #include <cmath>
+#include <rlgl.h>
 #include <string>
 #include <vector>
 
@@ -53,7 +52,15 @@ Texture2D makeSoftFieldVignette() {
 // line: pixels on that line (skin, or a skin/outline edge) are rebuilt at the same position on the
 // outline -> new-skin line; every other color (jerseys, helmets, face masks) is left alone. The
 // k > 0.25 ramp keeps near-outline colors, such as the Blaze's dark trim, untouched.
-constexpr const char* kSkinSwapShader = R"(#version 330
+//
+// Desktop OpenGL 3.3 wants "#version 330"; the browser build runs on WebGL 2 (OpenGL ES 3.0),
+// which wants "#version 300 es" and a default float precision. The shader body is the same.
+#if defined(__EMSCRIPTEN__)
+#define GRIDIRON_GLSL_HEADER "#version 300 es\nprecision mediump float;\n"
+#else
+#define GRIDIRON_GLSL_HEADER "#version 330\n"
+#endif
+constexpr const char* kSkinSwapShader = GRIDIRON_GLSL_HEADER R"(
 in vec2 fragTexCoord;
 in vec4 fragColor;
 uniform sampler2D texture0;

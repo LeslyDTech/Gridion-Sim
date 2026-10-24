@@ -49,6 +49,11 @@ std::vector<ManifestEntry> defaultManifest();
 // thread fail or crash. Uploading only a few per frame keeps the loading screen animating.
 //
 // Progress counts items actually installed into Assets, not elapsed time, so the bar is real.
+//
+// Browser build: there is no worker. Threads in a web page need cross-origin isolation headers
+// that static hosts such as GitHub Pages can't send, so pump() decodes one item itself per frame
+// before installing. The loading screen still animates between files; it just hitches on the big
+// ones (the player atlas).
 class AssetLoader {
 public:
     AssetLoader(std::filesystem::path root, std::vector<ManifestEntry> manifest);
@@ -85,6 +90,7 @@ private:
     };
 
     void workerMain();
+    void decodeNext(); // decodes m_manifest[m_nextDecode] onto m_ready
     Decoded decode(std::size_t index) const;
     void install(Decoded& item, Assets& assets, AppContext& context);
 
@@ -96,6 +102,7 @@ private:
     mutable std::mutex m_mutex; // guards m_ready and m_current
     std::deque<Decoded> m_ready;
     std::string m_current;
+    std::size_t m_nextDecode = 0; // the worker's (or, in the browser, pump()'s) next entry
 
     // Main thread only.
     std::size_t m_installed = 0;

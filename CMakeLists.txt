@@ -26,6 +26,19 @@ option(GRIDIRON_BUILD_GAME "Build the raylib executable" ON)
 option(GRIDIRON_BUILD_TESTS "Build the Catch2 unit tests" ON)
 option(GRIDIRON_WARNINGS_AS_ERRORS "Treat compiler warnings as errors (used by CI)" OFF)
 
+# Browser build (configured with `emcmake cmake`, see README): the game compiled to WebAssembly.
+# The tests run in the native builds, so they're skipped here.
+if(EMSCRIPTEN)
+    set(GRIDIRON_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    # raylib's web backend on WebGL 2 (OpenGL ES 3.0): unlike WebGL 1 it can mipmap textures whose
+    # sizes aren't powers of two, which the player atlas and font atlases rely on.
+    set(PLATFORM "Web" CACHE STRING "" FORCE)
+    set(OPENGL_VERSION "ES 3.0" CACHE STRING "" FORCE)
+    # Emscripten turns C++ exceptions off by default; the play loader reports bad JSON with one.
+    add_compile_options(-fexceptions)
+    add_link_options(-fexceptions)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(CompilerWarnings)
 include(Dependencies)
