@@ -9,8 +9,18 @@ fixed timestep, separate from rendering. The game logic is a standalone library 
 rendering dependency, so it builds and is unit-tested headless. raylib is used only in a thin
 platform layer for the window, input and drawing.
 
-![Screenshot](docs/images/screenshot.png)
-<!-- Placeholder: press F1 in-game for the debug view, take a screenshot, save it as docs/images/screenshot.png -->
+![Pre-snap: formation, routes and the playbook panel](docs/images/pre_snap.png)
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Loading screen](docs/images/loading.png) | ![Title screen with a live attract-mode play behind it](docs/images/title.png) |
+| **Loading**: manifest-driven progress, decoded on a worker thread | **Title**: a real simulated play runs behind the menu |
+| ![Live play](docs/images/live_play.png) | ![Pause menu](docs/images/pause.png) |
+| **Live play**: block, pursue and run poses from the simulation state | **Pause**: the simulation freezes behind the menu |
+| ![Debug overlay](docs/images/debug_overlay.png) | |
+| **Debug overlay (F1)**: frame timing, collision checks vs. brute force, the spatial-hash grid and each player's AI state | |
 
 ## Building
 
