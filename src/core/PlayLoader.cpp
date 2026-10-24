@@ -199,7 +199,10 @@ PlayDefinition readPlay(const json& root) {
     }
     play.side = side == "offense" ? Team::Offense : Team::Defense;
 
-    const json& players = requireField(root, "players", "");
+    // A named path, not "": GCC 13+ (-Wdangling-reference) assumes the returned reference could
+    // point into a temporary string argument.
+    const std::string topLevel;
+    const json& players = requireField(root, "players", topLevel);
     if (!players.is_array() || players.size() != PlayDefinition::kPlayersPerSide) {
         fail("players", "expected an array of exactly 11 players");
     }

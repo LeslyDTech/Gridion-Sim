@@ -10,7 +10,7 @@ namespace gridiron {
 std::vector<ManifestEntry> defaultManifest() {
     using Kind = ManifestEntry::Kind;
     using Slot = ManifestEntry::TextureSlot;
-    using Role = ManifestEntry::FontRole;
+    using FontRole = ManifestEntry::FontRole; // not "Role": that is the player role enum
     using theme::hud::Weight;
     std::vector<ManifestEntry> manifest;
 
@@ -25,15 +25,16 @@ std::vector<ManifestEntry> defaultManifest() {
     const char* bold = "assets/fonts/BarlowCondensed-Bold.ttf";
     const char* semiBold = "assets/fonts/BarlowCondensed-SemiBold.ttf";
     for (const int size : {17, 22, 24, 29, 34, 48, 58, 77}) {
-        manifest.push_back({Kind::Font, bold, Slot::Ball, Role::Hud, Weight::Bold, size});
+        manifest.push_back({Kind::Font, bold, Slot::Ball, FontRole::Hud, Weight::Bold, size});
     }
     for (const int size : {14, 19, 29}) {
-        manifest.push_back({Kind::Font, semiBold, Slot::Ball, Role::Hud, Weight::SemiBold, size});
+        manifest.push_back(
+            {Kind::Font, semiBold, Slot::Ball, FontRole::Hud, Weight::SemiBold, size});
     }
-    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball, Role::Field,
-                        Weight::Bold, Assets::kFieldFontSize});
+    manifest.push_back({Kind::Font, "assets/fonts/BebasNeue-Regular.ttf", Slot::Ball,
+                        FontRole::Field, Weight::Bold, Assets::kFieldFontSize});
     manifest.push_back({Kind::Font, "assets/fonts/JetBrainsMono-Regular.ttf", Slot::Ball,
-                        Role::Debug, Weight::Bold, Assets::kDebugFontSize});
+                        FontRole::Debug, Weight::Bold, Assets::kDebugFontSize});
 
     // Play data.
     manifest.push_back({Kind::Plays, "data/plays"});
